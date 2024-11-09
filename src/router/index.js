@@ -1,0 +1,17 @@
+import { createRouter, createWebHistory } from 'vue-router';
+import Dashboard from '../components/Dashboard.vue';
+import AddExpense from '../components/AddExpense.vue';
+import ExpenseList from '../components/ExpenseList.vue';
+
+const routes = [
+  { path: '/', component: Dashboard },
+  { path: '/add-expense', component: AddExpense },
+  { path: '/expense-list', component: ExpenseList }
+];
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+});
+
+export default router;
