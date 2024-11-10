@@ -1,16 +1,42 @@
 <template>
     <div class="dashboard">
-      <h1>Dashboard</h1>
+      <h1>Expense Summary</h1>
+  
+      <!-- Monthly Summary -->
+      <h2>Monthly Summary</h2>
+      <ul>
+        <li v-for="(total, month) in monthlySummary" :key="month">
+          {{ month }}: ${{ total }}
+        </li>
+      </ul>
+  
+      <!-- Category Summary -->
+      <h2>Category Summary</h2>
+      <ul>
+        <li v-for="(total, category) in categorySummary" :key="category">
+          {{ category }}: ${{ total }}
+        </li>
+      </ul>
+  
+      <!-- Filter by Category -->
       <div class="filter">
-        <label> Start Date</label>
-        <input type="date" v-model="startDate" />
-        <label> End Date</label>
-        <input type="date" v-model="endDate" />
-        <button @click="applyDateFilter">Apply Filter</button>
-        <button @click="clearDateFilter">Clear Fitler</button>
-
-        <p>Total Expenses for Selected Range: ${{totalExpenses}}</p>
+        <label>Filter by Category:</label>
+        <select v-model="selectedCategory" @change="applyCategoryFilter">
+          <option value="">All Categories</option>
+          <option v-for="(total, category) in categorySummary" :key="category" :value="category">
+            {{ category }}
+          </option>
+        </select>
       </div>
+  
+      <!-- Filtered Expense List -->
+      <h2>Filtered Expenses by Category</h2>
+      <ul v-if="filteredByCategory.length">
+        <li v-for="(expense, index) in filteredByCategory" :key="index">
+          {{ expense.date }} - {{ expense.category }}: ${{ expense.amount }}
+        </li>
+      </ul>
+      <p v-else>No expenses found for the selected category.</p>
     </div>
   </template>
   
@@ -20,66 +46,78 @@
     data() {
       return {
         expenses: [],
-        startDate: "",        // Filter start date
-        endDate: "",          // Filter end date
-        totalExpenses: 0      // Total expenses for the filtered date range
+        selectedCategory: "", // Selected category for filtering
       };
     },
     created() {
-      this.loadExpenses();
-      this.calculateTotalExpenses();
+      // Load expenses from localStorage on component creation
+      const savedExpenses = JSON.parse(localStorage.getItem("expenses")) || [];
+      this.expenses = savedExpenses;
+    },
+    computed: {
+      // Calculate total expenses for each month
+      monthlySummary() {
+        const monthlyTotals = {};
+        this.expenses.forEach((expense) => {
+          const month = new Date(expense.date).toLocaleString("default", {
+            month: "long",
+            year: "numeric",
+          });
+          if (!monthlyTotals[month]) {
+            monthlyTotals[month] = 0;
+          }
+          monthlyTotals[month] += Number(expense.amount);
+        });
+        return monthlyTotals;
+      },
+  
+      // Calculate total expenses for each category
+      categorySummary() {
+        const categoryTotals = {};
+        this.expenses.forEach((expense) => {
+          const category = expense.category;
+          if (!categoryTotals[category]) {
+            categoryTotals[category] = 0;
+          }
+          categoryTotals[category] += Number(expense.amount);
+        });
+        return categoryTotals;
+      },
+  
+      // Filter expenses by selected category
+      filteredByCategory() {
+        if (!this.selectedCategory) return this.expenses;
+        return this.expenses.filter(
+          (expense) => expense.category === this.selectedCategory
+        );
+      },
     },
     methods: {
-      loadExpenses() {
-        // Retrieve saved expenses from localStorage
-        this.expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+      applyCategoryFilter() {
+        // Method is triggered when a category is selected from the dropdown
+        // Computed property 'filteredByCategory' handles the filtering
       },
-      calculateTotalExpenses() {
-        // Calculate total expenses based on start and end dates
-        const filteredExpenses = this.expenses.filter(expense => {
-          const expenseDate = new Date(expense.date).getTime();
-          const start = this.startDate ? new Date(this.startDate).getTime() : null;
-          const end = this.endDate ? new Date(this.endDate).getTime() : null;
-  
-          return (!start || expenseDate >= start) && (!end || expenseDate <= end);
-        });
-  
-        // Sum up the amounts of filtered expenses
-        this.totalExpenses = filteredExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-      },
-      applyDateFilter() {
-        // Calculate total expenses for selected date range
-        this.calculateTotalExpenses();
-      },
-      clearFilter() {
-        // Reset dates and recalculate total expenses without filtering
-        this.startDate = "";
-        this.endDate = "";
-        this.calculateTotalExpenses();
-      }
-    }
+    },
   };
   </script>
   
   <style scoped>
   .dashboard {
     padding: 20px;
-    text-align: center;
   }
   
   .filter {
-    margin-bottom: 20px;
+    margin: 20px 0;
   }
   
-  button {
-    padding: 5px 10px;
-    margin-left: 10px;
-    cursor: pointer;
+  ul {
+    list-style-type: none;
+    padding: 0;
   }
   
-  button:hover {
-    background-color: #ddd;
-  }
+  li {
+    padding: 5px 0;
+  }  
   </style>
   
   
