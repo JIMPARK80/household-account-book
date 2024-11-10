@@ -4,6 +4,10 @@
       <router-link to="/">Dashboard</router-link>
       <router-link to="/add-expense">Add Expense</router-link>
       <router-link to="/expense-list">View Expenses</router-link>
+ <!-- [Day-5: Enable Category Customization] -->
+      <router-link to="/manage-categories">Manage Categories </router-link>
+ <!-- ====================================== --> 
+
     </nav>
     <router-view />
   </div>
