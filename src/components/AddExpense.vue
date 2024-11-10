@@ -1,7 +1,5 @@
 <template>
-    <div class="add-expense">
-      <h2>Add {{ type === 'expense' ? 'Expense' : 'Income' }}</h2>
-      
+    <div class="input-form">
       <!-- Tabs for Expense and Income -->
       <div class="tabs">
         <button @click="setType('expense')" :class="{ active: type === 'expense' }">Expense</button>
@@ -10,33 +8,41 @@
   
       <!-- Input Form -->
       <form @submit.prevent="addEntry">
-        <label>
-          Date:
-          <input v-model="entry.date" type="date" placeholder="Select a date" required />
-        </label>
-        <br />
-        <label>
-          Amount:
-          <input v-model="entry.amount" type="number" placeholder="Enter amount" required />
-        </label>
-        <br />
+        <!-- Date Field -->
+        <div class="form-group">
+          <label>Date:</label>
+          <input v-model="entry.date" type="date" required />
+        </div>
+  
+        <!-- Note Field -->
+        <div class="form-group">
+          <label>Note:</label>
+          <input v-model="entry.note" type="text" placeholder="Enter value" />
+        </div>
+  
+        <!-- Amount Field -->
+        <div class="form-group">
+          <label>{{ type === 'expense' ? 'Expense' : 'Income' }}:</label>
+          <input v-model="entry.amount" type="number" placeholder="0.00" required />
+        </div>
   
         <!-- Category Selection with Custom Category Option -->
         <div class="category-section">
-          <h3>Select Category</h3>
+          <h3>Category</h3>
           <div class="category-grid">
             <div
-              v-for="category in categories"
-              :key="category"
-              :class="{ selected: entry.category === category }"
-              @click="selectCategory(category)"
+              v-for="category in currentCategories"
+              :key="category.name"
+              :class="{ selected: entry.category === category.name }"
+              @click="selectCategory(category.name)"
               class="category"
             >
-              <span>{{ category }}</span>
+              <i :class="category.icon"></i>
+              <span>{{ category.name }}</span>
             </div>
-            <!-- Button to Add Custom Category -->
+            <!-- Button to Add/Edit Custom Categories -->
             <div class="category custom-category" @click="addingCustomCategory = true">
-              <span>+ Custom</span>
+              <span>Edit</span>
             </div>
           </div>
   
@@ -48,7 +54,8 @@
           </div>
         </div>
   
-        <button type="submit">Add {{ type === 'expense' ? 'Expense' : 'Income' }}</button>
+        <!-- Submit Button -->
+        <button type="submit" class="submit-button">Submit</button>
       </form>
     </div>
   </template>
@@ -60,13 +67,41 @@
         type: 'expense', // Default to expense
         entry: {
           date: '',
+          note: '',       // New field for additional notes
           amount: 0,
           category: '',
         },
-        categories: ['Food', 'Transport', 'Housing', 'Utilities', 'Entertainment', 'Others'],
+        expenseCategories: [
+          { name: 'Food', icon: 'fas fa-utensils' },
+          { name: 'Houseware', icon: 'fas fa-home' },
+          { name: 'Clothes', icon: 'fas fa-tshirt' },
+          { name: 'Cosmetic', icon: 'fas fa-paint-brush' },
+          { name: 'Exchange', icon: 'fas fa-exchange-alt' },
+          { name: 'Medical', icon: 'fas fa-first-aid' },
+          { name: 'Education', icon: 'fas fa-book' },
+          { name: 'Electric bill', icon: 'fas fa-bolt' },
+          { name: 'Transportation', icon: 'fas fa-bus' },
+          { name: 'Contact fee', icon: 'fas fa-phone' },
+          { name: 'Housing expense', icon: 'fas fa-building' },
+          { name: 'Other', icon: 'fas fa-ellipsis-h' }
+        ],
+        incomeCategories: [
+          { name: 'Salary', icon: 'fas fa-wallet' },
+          { name: 'Pocket money', icon: 'fas fa-piggy-bank' },
+          { name: 'Bonus', icon: 'fas fa-gift' },
+          { name: 'Side job', icon: 'fas fa-briefcase' },
+          { name: 'Investment', icon: 'fas fa-chart-line' },
+          { name: 'Extra', icon: 'fas fa-hand-holding-usd' }
+        ],
         addingCustomCategory: false, // Track if adding custom category
         newCategory: '', // Stores new category name
       };
+    },
+    computed: {
+      currentCategories() {
+        // Show expense or income categories based on selected type
+        return this.type === 'expense' ? this.expenseCategories : this.incomeCategories;
+      }
     },
     methods: {
       setType(newType) {
@@ -79,9 +114,12 @@
         this.addingCustomCategory = false; // Close custom category input if open
       },
       addCustomCategory() {
-        if (this.newCategory && !this.categories.includes(this.newCategory)) {
-          this.categories.push(this.newCategory); // Add new category to list
-          this.entry.category = this.newCategory; // Set as selected category
+        if (this.newCategory) {
+          const categoryList = this.type === 'expense' ? this.expenseCategories : this.incomeCategories;
+          if (!categoryList.some(cat => cat.name === this.newCategory)) {
+            categoryList.push({ name: this.newCategory, icon: 'fas fa-tag' }); // Default icon for new categories
+            this.entry.category = this.newCategory; // Set as selected category
+          }
           this.newCategory = ''; // Clear input
           this.addingCustomCategory = false;
         }
@@ -107,6 +145,7 @@
       resetForm() {
         this.entry = {
           date: '',
+          note: '', // Clear note field
           amount: 0,
           category: '',
         };
@@ -116,9 +155,10 @@
   </script>
   
   <style scoped>
-  .add-expense {
+  .input-form {
     max-width: 600px;
     margin: auto;
+    font-family: Arial, sans-serif;
   }
   
   .tabs {
@@ -139,8 +179,18 @@
   }
   
   .tabs .active {
-    background-color: #007bff;
+    background-color: #ffa500;
     color: white;
+  }
+  
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
   }
   
   .category-section {
@@ -163,7 +213,7 @@
   }
   
   .category.selected {
-    background-color: #007bff;
+    background-color: #ffa500;
     color: white;
   }
   
@@ -171,6 +221,23 @@
     display: flex;
     gap: 10px;
     margin-top: 10px;
+  }
+  
+  .submit-button {
+    background-color: #ff7f50; /* Orange */
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 15px;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    width: 100%;
+    margin-top: 20px;
+  }
+  
+  .submit-button:hover {
+    background-color: #ff6347; /* Darker orange */
   }
   
   button {

@@ -4,12 +4,16 @@ import Dashboard from '../components/Dashboard.vue';
 import AddExpense from '../components/AddExpense.vue';
 import ExpenseList from '../components/ExpenseList.vue';
 import ExpenseReport from '../components/ExpenseReport.vue'; // Updated import
+import CalendarView from '../components/CalendarView.vue';  // Import your CalendarView component
+
 
 const routes = [
   { path: '/', component: Dashboard },
   { path: '/add-expense', component: AddExpense },
   { path: '/expense-list', component: ExpenseList },
   { path: '/report', component: ExpenseReport }, // Updated route
+  { path: '/calendar', component: CalendarView }  // Add route for CalendarView
+
 ];
 
 const router = createRouter({
