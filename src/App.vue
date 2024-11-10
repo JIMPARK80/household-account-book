@@ -1,6 +1,11 @@
 <template>
   <div id="app">
-    <router-view /> <!-- Renders the component for the active route -->
+    <nav>
+      <router-link to="/">Dashboard</router-link>
+      <router-link to="/add-expense">Add Expense</router-link>
+      <router-link to="/expense-list">View Expenses</router-link>
+    </nav>
+    <router-view />
   </div>
 </template>
 

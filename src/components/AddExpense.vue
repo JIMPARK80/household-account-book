@@ -34,19 +34,31 @@ export default{
     },
     methods:{
         addExpense(){
-            // Output the input expenditure data to the console, 입력된 지출 데이터를 콘솔 출력, 
-        console.log("Expense added:", {
-            amount: this.amount, 
-            category: this.category, 
-            date: this.date
-        });
+            // create an expense object
+        
+            const expense = {
+                amount: this.amount,
+                category: this.category,
+                date: this.date
+            };
 
+            // Get existing expenses from localStorage
+            const expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+            
+            // Add the new expense to to the array
+            expenses.push(expense);
 
-        // 폼 제출후 필드 초기회
-        this.amount = 0;
-        this.category = "";
-        this.date = "";
-        }
+            // Save the updated array back to localStorage
+            localStorage.setItem("expenses", JSON.stringify(expenses));
+
+            // 폼 제출후 필드 초기회
+            this.amount = 0;
+            this.category = "";
+            this.date = "";
+
+            // log to console for debugging
+            console.log("Expense added:", expense);
+            }
     }
 };
 </script>
