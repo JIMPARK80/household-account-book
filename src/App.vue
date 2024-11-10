@@ -22,4 +22,22 @@ export default {
   color: #2c3e50;
   margin-top: 60px;
 }
+
+nav {
+  margin-bottom: 20px;
+  background-color: #42b983;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+nav a {
+  margin: 0 10px;
+  text-decoration: none;
+  color: white;
+  font-weight: bold;
+}
+
+nav a.router-link-exact-active {
+  color: #35495e;
+}
 </style>
