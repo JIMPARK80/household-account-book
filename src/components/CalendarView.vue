@@ -1,33 +1,42 @@
 <template>
     <div class="calendar-container">
-      <!-- Calendar Header with Month and Year -->
+      <!-- Header with Month Navigation -->
       <div class="calendar-header">
         <button @click="goToPreviousMonth">‹</button>
         <span>{{ currentMonthName }} {{ currentYear }}</span>
         <button @click="goToNextMonth">›</button>
       </div>
   
-      <!-- Weekday Labels -->
-      <div class="calendar-grid">
-        <div class="weekday-label" v-for="day in weekDays" :key="day">{{ day }}</div>
-      </div>
-  
-      <!-- Main Calendar Grid (Dates) -->
-      <div class="calendar-grid">
-        <div
-          class="calendar-day"
-          v-for="day in currentMonthDays"
-          :key="day.date"
-          :class="{ 'today': isToday(day.date) }"
-        >
-          <div class="date-number">{{ day.date.getDate() }}</div>
-          <ul class="event-list">
-            <li v-for="event in day.events" :key="event.id" :class="event.type">
-              {{ event.type === 'income' ? '+' : '-' }}{{ formatCurrency(event.amount) }}
-            </li>
-          </ul>
-        </div>
-      </div>
+      <!-- Calendar Table -->
+      <table class="calendar-table">
+        <thead>
+        <tr>
+          <th v-for="day in abbreviatedWeekDays" :key="day" class="weekday-header">
+            {{ day }}
+          </th>
+        </tr>
+      </thead>
+        <tbody>
+          <tr v-for="(week, weekIndex) in weeks" :key="weekIndex">
+            <td
+              v-for="day in week"
+              :key="day.date"
+              :class="{ 'today': isToday(day.date), 'other-month': !day.isCurrentMonth }"
+            >
+              <div class="date-number">{{ day.date.getDate() }}</div>
+              <ul class="event-list">
+                <li
+                  v-for="event in day.events"
+                  :key="event.id"
+                  :class="event.type"
+                >
+                  {{ event.type === 'income' ? '+' : '-' }}{{ formatCurrency(event.amount) }}
+                </li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
   
       <!-- Monthly Summary -->
       <div class="monthly-summary">
@@ -49,29 +58,13 @@
     data() {
       return {
         selectedDate: new Date(),
-        weekDays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        weekDays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
       };
     },
     computed: {
-      currentMonthDays() {
-        const days = [];
-        const year = this.selectedDate.getFullYear();
-        const month = this.selectedDate.getMonth();
-  
-        // Get the first and last dates of the current month
-        const startDate = new Date(year, month, 1);
-        const endDate = new Date(year, month + 1, 0);
-  
-        // Fill days array with each day of the month
-        for (let day = startDate; day <= endDate; day.setDate(day.getDate() + 1)) {
-          const date = new Date(day);
-          days.push({
-            date,
-            events: this.events.filter(event => new Date(event.date).toDateString() === date.toDateString())
-          });
-        }
-        return days;
-      },
+        abbreviatedWeekDays(){
+            return this.weekDays.map(day=> day.slice(0,3).toUpperCase()); // convert to "SUN", "MON", etc.
+        },
       currentMonthName() {
         return this.selectedDate.toLocaleString("default", { month: "long" });
       },
@@ -90,6 +83,32 @@
       },
       totalBalance() {
         return this.totalIncome - this.totalExpense;
+      },
+      weeks() {
+        const days = [];
+        const year = this.selectedDate.getFullYear();
+        const month = this.selectedDate.getMonth();
+        const firstDayOfMonth = new Date(year, month, 1);
+        const lastDayOfMonth = new Date(year, month + 1, 0);
+        const startDate = new Date(firstDayOfMonth);
+        startDate.setDate(firstDayOfMonth.getDate() - firstDayOfMonth.getDay());
+        const endDate = new Date(lastDayOfMonth);
+        endDate.setDate(lastDayOfMonth.getDate() + (6 - lastDayOfMonth.getDay()));
+  
+        for (let day = startDate; day <= endDate; day.setDate(day.getDate() + 1)) {
+          const date = new Date(day);
+          days.push({
+            date,
+            isCurrentMonth: date.getMonth() === month,
+            events: this.events.filter(event => new Date(event.date).toDateString() === date.toDateString())
+          });
+        }
+  
+        const weeks = [];
+        for (let i = 0; i < days.length; i += 7) {
+          weeks.push(days.slice(i, i + 7));
+        }
+        return weeks;
       }
     },
     methods: {
@@ -103,11 +122,11 @@
       },
       goToPreviousMonth() {
         this.selectedDate.setMonth(this.selectedDate.getMonth() - 1);
-        this.selectedDate = new Date(this.selectedDate); // Update to trigger reactivity
+        this.selectedDate = new Date(this.selectedDate);
       },
       goToNextMonth() {
         this.selectedDate.setMonth(this.selectedDate.getMonth() + 1);
-        this.selectedDate = new Date(this.selectedDate); // Update to trigger reactivity
+        this.selectedDate = new Date(this.selectedDate);
       },
       formatCurrency(value) {
         return `$${parseFloat(value).toFixed(2)}`;
@@ -118,8 +137,9 @@
   
   <style scoped>
   .calendar-container {
-    max-width: 600px;
-    margin: auto;
+    max-width: 100%;
+    padding: 0 10px;
+    box-sizing: border-box;
   }
   
   .calendar-header {
@@ -131,35 +151,28 @@
     font-size: 1.2em;
   }
   
-  .calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    text-align: center;
-    gap: 1px;
+  .calendar-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
     border: 1px solid #ddd;
   }
   
-  .weekday-label {
-    font-weight: bold;
+  .calendar-table th,
+  .calendar-table td {
     padding: 10px;
-    background-color: #f0f0f0;
+    text-align: center;
+    vertical-align: top;
     border: 1px solid #ddd;
   }
   
-  .calendar-day {
-    border: 1px solid #ddd;
-    min-height: 100px;
-    max-height: 120px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    padding: 5px;
-  }
-  
-  .calendar-day.today {
+  .calendar-table .today {
     background-color: #e0f7fa;
     border: 2px solid #00796b;
+  }
+  
+  .calendar-table .other-month {
+    color: #ccc;
   }
   
   .date-number {
@@ -168,13 +181,8 @@
   }
   
   .event-list {
-    flex-grow: 1;
-    overflow-y: auto;
-  }
-  
-  .event-list li {
     font-size: 0.85em;
-    margin: 2px 0;
+    margin-top: 5px;
   }
   
   .income {
