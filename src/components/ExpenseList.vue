@@ -1,8 +1,15 @@
 <template>
   <div class="expense-list">
-    <h2>Expense List</h2>
+    <h2 class="center-title">== Expense List - Calendar (가계부-달력) ==</h2>
+
+
+    <!-- Calendar View Component (Only View) -->
+    <CalendarView :events="filteredEntries" />
+
 
     <!-- Category Filter and Sort Options -->
+    <h3 class="center-title">-- Detail History (상세이력) -- </h3>
+
     <div class="filter-sort-controls">
       <label>
         Category:
@@ -21,8 +28,6 @@
       </label>
     </div>
 
-    <!-- Calendar View Component (Only View) -->
-    <CalendarView :events="filteredEntries" />
 
     <!-- Transaction List Component (Detailed List) -->
     <div class="transaction-list-container">
@@ -115,6 +120,10 @@ export default {
 .expense-list {
   max-width: 800px;
   margin: auto;
+  align-items: center;
+}
+.center-title {
+  text-align: center;
 }
 
 .filter-sort-controls {
