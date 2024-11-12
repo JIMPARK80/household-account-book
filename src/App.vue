@@ -6,7 +6,6 @@
       <router-link to="/" class="nav-item">Dashboard</router-link>
       <router-link to="/add-expense" class="nav-item">Input</router-link>
       <router-link to="/expense-list" class="nav-item">Expense List</router-link>
-      <router-link to="/report" class="nav-item">Report</router-link>
     </nav>
 
     <!-- Main Content Area -->
