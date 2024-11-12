@@ -2,17 +2,57 @@
   <div class="expense-list">
     <h2>Expense List</h2>
 
+    <!-- Category Filter and Sort Options -->
+    <div class="filter-sort-controls">
+      <label>
+        Category:
+        <select v-model="selectedCategory">
+          <option value="">All</option>
+          <option v-for="category in categories" :key="category" :value="category">{{ category }}</option>
+        </select>
+      </label>
+
+      <label>
+        Sort by:
+        <select v-model="sortBy">
+          <option value="date">Date</option>
+          <option value="amount">Amount</option>
+        </select>
+      </label>
+    </div>
+
     <!-- Calendar View Component (Only View) -->
     <CalendarView :events="filteredEntries" />
+
+    <!-- Transaction List Component (Detailed List) -->
+    <div class="transaction-list-container">
+      <TransactionList
+        :entries="filteredEntries"
+        @edit-entry="editEntry"
+        @delete-entry="deleteEntry"
+      />
+    </div>
+
+    <!-- Add Expense Component for Adding or Editing -->
+    <AddExpense
+      v-if="showAddExpense"
+      :editingEntry="editingEntry"
+      @updateList="fetchEntries"
+      @close="closeAddExpense"
+    />
   </div>
 </template>
 
 <script>
 import CalendarView from './CalendarView.vue';
+import TransactionList from './TransactionList.vue';
+import AddExpense from './AddExpense.vue';
 
 export default {
   components: {
-    CalendarView
+    CalendarView,
+    TransactionList,
+    AddExpense,
   },
   data() {
     return {
@@ -20,6 +60,8 @@ export default {
       selectedCategory: '',
       sortBy: 'date',
       categories: ['Food', 'Transport', 'Housing', 'Utilities', 'Entertainment', 'Others'],
+      showAddExpense: false, // Controls AddExpense component visibility
+      editingEntry: null, // Stores the entry being edited
     };
   },
   computed: {
@@ -39,7 +81,7 @@ export default {
       }
 
       return filtered;
-    }
+    },
   },
   created() {
     this.fetchEntries();
@@ -49,8 +91,23 @@ export default {
       // Fetch entries from localStorage
       const savedEntries = JSON.parse(localStorage.getItem('entries')) || [];
       this.entries = savedEntries;
-    }
-  }
+    },
+    editEntry(entry) {
+      // Open the AddExpense component in edit mode
+      this.editingEntry = entry;
+      this.showAddExpense = true;
+    },
+    deleteEntry(id) {
+      // Delete the entry from entries array and update localStorage
+      this.entries = this.entries.filter(entry => entry.id !== id);
+      localStorage.setItem('entries', JSON.stringify(this.entries));
+    },
+    closeAddExpense() {
+      // Close AddExpense component and reset editing entry
+      this.showAddExpense = false;
+      this.editingEntry = null;
+    },
+  },
 };
 </script>
 
@@ -58,5 +115,15 @@ export default {
 .expense-list {
   max-width: 800px;
   margin: auto;
+}
+
+.filter-sort-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.transaction-list-container {
+  margin-top: 20px;
 }
 </style>
