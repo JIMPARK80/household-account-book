@@ -8,8 +8,6 @@
 
 
     <!-- Category Filter and Sort Options -->
-    <h3 class="center-title">-- Detail History (상세이력) -- </h3>
-
     <div class="filter-sort-controls">
       <label>
         Category:
@@ -30,6 +28,7 @@
 
 
     <!-- Transaction List Component (Detailed List) -->
+    <h3 class="center-title">-- Detail History (상세이력) -- </h3>
     <div class="transaction-list-container">
       <TransactionList
         :entries="filteredEntries"
@@ -129,7 +128,8 @@ export default {
 .filter-sort-controls {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 40px;
+  margin-top: 40px;
 }
 
 .transaction-list-container {
