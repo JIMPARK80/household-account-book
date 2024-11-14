@@ -3,13 +3,9 @@
     <h1>Dashboard View</h1>
 
     <!-- Summary of Monthly Expenses -->
+    <h2>Monthly Expense Summary</h2>
     <div v-if="monthlySummary.length">
-      <h2>Monthly Summary</h2>
-      <ul>
-        <li v-for="summary in monthlySummary" :key="summary.category">
-          {{ summary.category }}: {{ summary.amount }}$
-        </li>
-      </ul>
+      <Pie :data="chartData" />
     </div>
     <p v-else>No expenses available for summary.</p>
   </div>
@@ -17,46 +13,56 @@
 
 <script>
 import { setupDatabase, getAllExpenses } from '../database.js';
+import { ref, onMounted, computed } from 'vue';
+import { Pie } from 'vue-chartjs';
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  CategoryScale,
+} from 'chart.js';
+
+ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale);
 
 export default {
   name: 'DashboardView',
-  data() {
-    return {
-      expenses: [], // Initialize as an empty array
-    };
-  },
-  computed: {
-    monthlySummary() {
-      // Ensure `this.expenses` is an array before processing
-      if (!Array.isArray(this.expenses)) return [];
-
-      // Example monthly summary logic: group by category and calculate totals
+  components: { Pie },
+  setup() {
+    const expenses = ref([]);
+    const monthlySummary = computed(() => {
       const summary = {};
-      this.expenses.forEach((expense) => {
-        if (expense.category in summary) {
+      expenses.value.forEach((expense) => {
+        if (summary[expense.category]) {
           summary[expense.category] += expense.amount;
         } else {
           summary[expense.category] = expense.amount;
         }
       });
-
-      // Convert the summary object to an array of category-amount pairs
       return Object.keys(summary).map((category) => ({
         category,
         amount: summary[category],
       }));
-    },
-  },
-  mounted() {
-    // Load expenses from IndexedDB when the component is mounted
-    this.loadExpenses();
-  },
-  methods: {
-    async loadExpenses() {
-      // Initialize the database and fetch all expenses
+    });
+
+    const chartData = computed(() => ({
+      labels: monthlySummary.value.map((item) => item.category),
+      datasets: [
+        {
+          label: 'Expenses by Category',
+          data: monthlySummary.value.map((item) => item.amount),
+          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+        },
+      ],
+    }));
+
+    onMounted(async () => {
       const db = await setupDatabase();
-      this.expenses = await getAllExpenses(db) || []; // Ensure it defaults to an array
-    },
+      expenses.value = await getAllExpenses(db);
+    });
+
+    return { chartData, monthlySummary };
   },
 };
 </script>
@@ -76,15 +82,5 @@ h1 {
 h2 {
   font-size: 20px;
   margin-top: 20px;
-}
-
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-li {
-  font-size: 16px;
-  padding: 5px 0;
 }
 </style>
