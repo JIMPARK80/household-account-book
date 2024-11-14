@@ -21,6 +21,7 @@
 
 <script>
 import { format, parseISO } from 'date-fns';
+import { setupDatabase, getAllExpenses, deleteExpense } from '../database.js';
 
 export default {
   data() {
@@ -28,13 +29,13 @@ export default {
       entries: []
     };
   },
-  created() {
-    this.fetchEntries();
+  async created() {
+    await this.fetchEntries();
   },
   methods: {
-    fetchEntries() {
-      // Retrieve entries from localStorage and parse dates to ensure local timezone consistency
-      const savedEntries = JSON.parse(localStorage.getItem('entries')) || [];
+    async fetchEntries() {
+      const db = await setupDatabase();
+      const savedEntries = await getAllExpenses(db);
       this.entries = savedEntries.map(entry => ({
         ...entry,
         date: parseISO(entry.date) // Parse date string to Date object
@@ -51,15 +52,14 @@ export default {
       // Emit an event to open the AddExpense form with the selected entry's data
       this.$emit('edit-entry', entry);
     },
-    deleteEntry(id) {
-      // Filter out the entry to be deleted and update localStorage
-      this.entries = this.entries.filter(entry => entry.id !== id);
-      localStorage.setItem('entries', JSON.stringify(this.entries));
+    async deleteEntry(id) {
+      const db = await setupDatabase();
+      await deleteExpense(db, id); // Delete the entry from IndexedDB
+      this.entries = this.entries.filter(entry => entry.id !== id); // Update the local list
     }
   }
 };
 </script>
-
 
 <style scoped>
 .transaction-list-container {

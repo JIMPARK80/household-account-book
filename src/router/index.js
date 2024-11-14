@@ -1,20 +1,22 @@
 // src/router/index.js
+
 import { createRouter, createWebHistory } from 'vue-router';
-import Dashboard from '../components/Dashboard.vue';
-import AddExpense from '../components/AddExpense.vue';
-import ExpenseList from '../components/ExpenseList.vue';
-import TransactionList from '../components/TransactionList.vue'; // Updated import
-import CalendarView from '../components/CalendarView.vue';  // Import your CalendarView component
+import DashboardView from '../components/DashboardView.vue'; // Renamed to follow multi-word naming convention
+import AddExpenseView from '../components/AddExpense.vue';
+import ExpenseListView from '../components/ExpenseList.vue';
+import TransactionListView from '../components/TransactionList.vue'; // Updated import to follow naming conventions
+import CalendarView from '../components/CalendarView.vue'; // Import your CalendarView component
 
-
+// Define routes
 const routes = [
-  { path: '/', component: Dashboard },
-  { path: '/add-expense', component: AddExpense },
-  { path: '/expense-list', component: ExpenseList },
-  { path: '/calendar', component: CalendarView },  // Add route for CalendarView
-  { path: '/transaction-list-container' , component: TransactionList}
+  { path: '/', component: DashboardView }, // Use the renamed DashboardView
+  { path: '/add-expense', component: AddExpenseView },
+  { path: '/expense-list', component: ExpenseListView },
+  { path: '/calendar', component: CalendarView }, // Route for CalendarView
+  { path: '/transaction-list', component: TransactionListView }, // Updated path
 ];
 
+// Create and export the router
 const router = createRouter({
   history: createWebHistory(),
   routes,
