@@ -7,26 +7,6 @@
     <CalendarView :events="filteredEntries" />
 
 
-    <!-- Category Filter and Sort Options -->
-    <div class="filter-sort-controls">
-      <label>
-        Category:
-        <select v-model="selectedCategory">
-          <option value="">All</option>
-          <option v-for="category in categories" :key="category" :value="category">{{ category }}</option>
-        </select>
-      </label>
-
-      <label>
-        Sort by:
-        <select v-model="sortBy">
-          <option value="date">Date</option>
-          <option value="amount">Amount</option>
-        </select>
-      </label>
-    </div>
-
-
     <!-- Transaction List Component (Detailed List) -->
     <h3 class="center-title">-- Detail History (상세이력) -- </h3>
     <div class="transaction-list-container">

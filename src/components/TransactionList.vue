@@ -1,8 +1,23 @@
 <template>
   <div class="transaction-list-container">
     <h3>Entries</h3>
+
+    <!-- Sort By Filter -->
+    <label for="sort">Sort by:</label>
+    <select v-model="sortBy" id="sort">
+      <option value="date">Date</option>
+      <option value="amount">Amount</option>
+    </select>
+
+    <!-- Sort Order Toggle -->
+    <label for="order">Order:</label>
+    <select v-model="sortOrder" id="order">
+      <option value="asc">Ascending</option>
+      <option value="desc">Descending</option>
+    </select>
+
     <ul class="transaction-list">
-      <li v-for="entry in entries" :key="entry.id" class="transaction-item">
+      <li v-for="entry in sortedEntries" :key="entry.id" class="transaction-item">
         <div class="transaction-details">
           <span class="transaction-category">{{ entry.category }}</span>
           <span class="transaction-note">{{ entry.note }}</span>
@@ -11,46 +26,42 @@
         <span class="transaction-amount" :class="{ income: entry.type === 'income', expense: entry.type === 'expense' }">
           {{ formatCurrency(entry.amount) }}
         </span>
-        <!-- Edit and Delete Buttons -->
-        <button @click="openEditForm(entry)">Edit</button>
+        <button @click="editEntry(entry)">Edit</button>
         <button @click="deleteEntry(entry.id)">Delete</button>
       </li>
     </ul>
-
-    <!-- Edit Form -->
-    <div v-if="editingEntry" class="edit-form">
-      <h3>Edit Entry</h3>
-      <form @submit.prevent="updateEntry">
-        <label for="date">Date:</label>
-        <input type="date" v-model="selectedEntry.date" />
-
-        <label for="note">Note:</label>
-        <input type="text" v-model="selectedEntry.note" />
-
-        <label for="amount">Amount:</label>
-        <input type="number" v-model.number="selectedEntry.amount" />
-
-        <label for="category">Category:</label>
-        <input type="text" v-model="selectedEntry.category" />
-
-        <button type="submit">Save</button>
-        <button @click="cancelEdit">Cancel</button>
-      </form>
-    </div>
   </div>
 </template>
 
 <script>
 import { format, parseISO } from 'date-fns';
-import { setupDatabase, getAllExpenses, deleteExpense, updateExpense } from '../database.js';
+import { setupDatabase, getAllExpenses, deleteExpense } from '../database.js';
 
 export default {
   data() {
     return {
       entries: [],
-      editingEntry: false, // Track if an entry is being edited
-      selectedEntry: null // Store the entry being edited
+      sortBy: 'date',
+      sortOrder: 'asc', // Add sortOrder to control ascending or descending order
     };
+  },
+  computed: {
+    sortedEntries() {
+      // Sort entries by date or amount based on sortBy and sortOrder selection
+      const sortedEntries = [...this.entries];
+      sortedEntries.sort((a, b) => {
+        let comparison = 0;
+        if (this.sortBy === 'date') {
+          comparison = new Date(a.date) - new Date(b.date);
+        } else if (this.sortBy === 'amount') {
+          comparison = a.amount - b.amount;
+        }
+
+        // Adjust for ascending or descending order
+        return this.sortOrder === 'asc' ? comparison : -comparison;
+      });
+      return sortedEntries;
+    }
   },
   async created() {
     await this.fetchEntries();
@@ -61,7 +72,7 @@ export default {
       const savedEntries = await getAllExpenses(db);
       this.entries = savedEntries.map(entry => ({
         ...entry,
-        date: parseISO(entry.date) // Parse date string to Date object
+        date: parseISO(entry.date),
       }));
     },
     formatDate(date) {
@@ -70,28 +81,15 @@ export default {
     formatCurrency(value) {
       return `${value.toFixed(2)}$`;
     },
-    openEditForm(entry) {
-      // Set up the form for editing
-      this.selectedEntry = { ...entry };
-      this.editingEntry = true;
-    },
-    async updateEntry() {
-      const db = await setupDatabase();
-      await updateExpense(db, this.selectedEntry); // Update the entry in IndexedDB
-      await this.fetchEntries(); // Refresh the list after updating
-      this.editingEntry = false; // Close the edit form
-    },
-    cancelEdit() {
-      // Reset the edit form
-      this.editingEntry = false;
-      this.selectedEntry = null;
+    editEntry(entry) {
+      this.$emit('edit-entry', entry);
     },
     async deleteEntry(id) {
       const db = await setupDatabase();
       await deleteExpense(db, id);
       this.entries = this.entries.filter(entry => entry.id !== id);
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -144,28 +142,5 @@ export default {
 
 .expense {
   color: red;
-}
-
-/* Edit form styling */
-.edit-form {
-  margin-top: 20px;
-  padding: 10px;
-  border: 1px solid #ddd;
-}
-
-.edit-form label {
-  display: block;
-  margin-top: 10px;
-}
-
-.edit-form input {
-  width: 100%;
-  padding: 5px;
-  margin-top: 5px;
-  box-sizing: border-box;
-}
-
-.edit-form button {
-  margin-top: 10px;
 }
 </style>
