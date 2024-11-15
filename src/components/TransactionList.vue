@@ -12,21 +12,44 @@
           {{ formatCurrency(entry.amount) }}
         </span>
         <!-- Edit and Delete Buttons -->
-        <button @click="editEntry(entry)">Edit</button>
+        <button @click="openEditForm(entry)">Edit</button>
         <button @click="deleteEntry(entry.id)">Delete</button>
       </li>
     </ul>
+
+    <!-- Edit Form -->
+    <div v-if="editingEntry" class="edit-form">
+      <h3>Edit Entry</h3>
+      <form @submit.prevent="updateEntry">
+        <label for="date">Date:</label>
+        <input type="date" v-model="selectedEntry.date" />
+
+        <label for="note">Note:</label>
+        <input type="text" v-model="selectedEntry.note" />
+
+        <label for="amount">Amount:</label>
+        <input type="number" v-model.number="selectedEntry.amount" />
+
+        <label for="category">Category:</label>
+        <input type="text" v-model="selectedEntry.category" />
+
+        <button type="submit">Save</button>
+        <button @click="cancelEdit">Cancel</button>
+      </form>
+    </div>
   </div>
 </template>
 
 <script>
 import { format, parseISO } from 'date-fns';
-import { setupDatabase, getAllExpenses, deleteExpense, updateExpense } from '../database.js'; // Add updateExpense import
+import { setupDatabase, getAllExpenses, deleteExpense, updateExpense } from '../database.js';
 
 export default {
   data() {
     return {
-      entries: []
+      entries: [],
+      editingEntry: false, // Track if an entry is being edited
+      selectedEntry: null // Store the entry being edited
     };
   },
   async created() {
@@ -42,29 +65,31 @@ export default {
       }));
     },
     formatDate(date) {
-      // Format the date as 'YYYY-MM-DD' for display
       return format(date, 'yyyy-MM-dd');
     },
     formatCurrency(value) {
       return `${value.toFixed(2)}$`;
     },
-    async editEntry(entry) {
-      const newAmount = prompt("Enter new amount:", entry.amount);
-      if (newAmount !== null) {
-        entry.amount = parseFloat(newAmount);
-        
-        // Update the entry in IndexedDB
-        const db = await setupDatabase();
-        await updateExpense(db, entry);
-        
-        // Refresh the entries list
-        await this.fetchEntries();
-      }
+    openEditForm(entry) {
+      // Set up the form for editing
+      this.selectedEntry = { ...entry };
+      this.editingEntry = true;
+    },
+    async updateEntry() {
+      const db = await setupDatabase();
+      await updateExpense(db, this.selectedEntry); // Update the entry in IndexedDB
+      await this.fetchEntries(); // Refresh the list after updating
+      this.editingEntry = false; // Close the edit form
+    },
+    cancelEdit() {
+      // Reset the edit form
+      this.editingEntry = false;
+      this.selectedEntry = null;
     },
     async deleteEntry(id) {
       const db = await setupDatabase();
-      await deleteExpense(db, id); // Delete the entry from IndexedDB
-      this.entries = this.entries.filter(entry => entry.id !== id); // Update the local list
+      await deleteExpense(db, id);
+      this.entries = this.entries.filter(entry => entry.id !== id);
     }
   }
 };
@@ -119,5 +144,28 @@ export default {
 
 .expense {
   color: red;
+}
+
+/* Edit form styling */
+.edit-form {
+  margin-top: 20px;
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+.edit-form label {
+  display: block;
+  margin-top: 10px;
+}
+
+.edit-form input {
+  width: 100%;
+  padding: 5px;
+  margin-top: 5px;
+  box-sizing: border-box;
+}
+
+.edit-form button {
+  margin-top: 10px;
 }
 </style>
