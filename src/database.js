@@ -54,3 +54,20 @@ export async function getAllExpenses(db) {
     };
   });
 }
+
+export async function updateExpense(db, expense){
+  const tx = db.transaction('expenses','readwrite');
+  const store = tx.objectStore('expenses');
+  // Ensure expense is a plain objectn to avoid DataCloneError
+  const expenseData = JSON.parse(JSON.stringify(expense))
+
+  await store.put(expenseData);
+  await tx.complete;
+}
+
+export async function deleteExpense(db, id){
+  const tx = db.transaction('expenses', 'readwrite')
+  const store = tx.objectStore('expenses');
+  await store.delete(id);
+  await tx.complete
+}

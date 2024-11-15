@@ -21,7 +21,7 @@
 
 <script>
 import { format, parseISO } from 'date-fns';
-import { setupDatabase, getAllExpenses, deleteExpense } from '../database.js';
+import { setupDatabase, getAllExpenses, deleteExpense, updateExpense } from '../database.js'; // Add updateExpense import
 
 export default {
   data() {
@@ -48,9 +48,18 @@ export default {
     formatCurrency(value) {
       return `${value.toFixed(2)}$`;
     },
-    editEntry(entry) {
-      // Emit an event to open the AddExpense form with the selected entry's data
-      this.$emit('edit-entry', entry);
+    async editEntry(entry) {
+      const newAmount = prompt("Enter new amount:", entry.amount);
+      if (newAmount !== null) {
+        entry.amount = parseFloat(newAmount);
+        
+        // Update the entry in IndexedDB
+        const db = await setupDatabase();
+        await updateExpense(db, entry);
+        
+        // Refresh the entries list
+        await this.fetchEntries();
+      }
     },
     async deleteEntry(id) {
       const db = await setupDatabase();
