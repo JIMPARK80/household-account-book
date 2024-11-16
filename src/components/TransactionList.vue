@@ -17,7 +17,7 @@
     </select>
 
     <ul class="transaction-list">
-      <li v-for="entry in sortedEntries" :key="entry.id" class="transaction-item">
+      <li v-for="entry in filteredAndSortedEntries" :key="entry.id" class="transaction-item">
         <div class="transaction-details">
           <span class="transaction-category">{{ entry.category }}</span>
           <span class="transaction-note">{{ entry.note }}</span>
@@ -38,17 +38,32 @@ import { format, parseISO } from 'date-fns';
 import { setupDatabase, getAllExpenses, deleteExpense } from '../database.js';
 
 export default {
+  props: {
+    selectedMonth: {
+      type: Date,
+      required: true
+    }
+  },
   data() {
     return {
       entries: [],
       sortBy: 'date',
-      sortOrder: 'asc', // Add sortOrder to control ascending or descending order
+      sortOrder: 'asc' // Control ascending or descending order
     };
   },
   computed: {
-    sortedEntries() {
+    filteredAndSortedEntries() {
+      // Filter entries to only show those in the selected month and year
+      const monthFilteredEntries = this.entries.filter((entry) => {
+        const entryDate = new Date(entry.date);
+        return (
+          entryDate.getMonth() === this.selectedMonth.getMonth() &&
+          entryDate.getFullYear() === this.selectedMonth.getFullYear()
+        );
+      });
+
       // Sort entries by date or amount based on sortBy and sortOrder selection
-      const sortedEntries = [...this.entries];
+      const sortedEntries = [...monthFilteredEntries];
       sortedEntries.sort((a, b) => {
         let comparison = 0;
         if (this.sortBy === 'date') {
@@ -70,9 +85,9 @@ export default {
     async fetchEntries() {
       const db = await setupDatabase();
       const savedEntries = await getAllExpenses(db);
-      this.entries = savedEntries.map(entry => ({
+      this.entries = savedEntries.map((entry) => ({
         ...entry,
-        date: parseISO(entry.date),
+        date: parseISO(entry.date)
       }));
     },
     formatDate(date) {
@@ -87,9 +102,9 @@ export default {
     async deleteEntry(id) {
       const db = await setupDatabase();
       await deleteExpense(db, id);
-      this.entries = this.entries.filter(entry => entry.id !== id);
-    },
-  },
+      this.entries = this.entries.filter((entry) => entry.id !== id);
+    }
+  }
 };
 </script>
 

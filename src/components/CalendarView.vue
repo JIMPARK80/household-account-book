@@ -1,40 +1,23 @@
 <template>
   <div class="calendar-container">
-    <!-- Display Current Local Time -->
-    <div class="current-time">
-      Current Time: {{ formatCurrentTime }}
-    </div>
-
-    <!-- Header with Month Navigation -->
+    <div class="current-time">Current Time: {{ formatCurrentTime }}</div>
     <div class="calendar-header">
       <button @click="goToPreviousMonth">‹</button>
       <span>{{ currentMonthName }} {{ currentYear }}</span>
       <button @click="goToNextMonth">›</button>
     </div>
-
-    <!-- Calendar Table -->
     <table class="calendar-table">
       <thead>
         <tr>
-          <th v-for="day in abbreviatedWeekDays" :key="day" class="weekday-header">
-            {{ day }}
-          </th>
+          <th v-for="day in abbreviatedWeekDays" :key="day" class="weekday-header">{{ day }}</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(week, weekIndex) in weeks" :key="weekIndex">
-          <td
-            v-for="day in week"
-            :key="day.date.toISOString()"
-            :class="{ 'today': isToday(day.date), 'other-month': !day.isCurrentMonth }"
-          >
+          <td v-for="day in week" :key="day.date.toISOString()" :class="{ 'today': isToday(day.date), 'other-month': !day.isCurrentMonth }">
             <div class="date-number">{{ day.date.toLocaleString(userLocale, { day: 'numeric' }) }}</div>
             <ul class="event-list">
-              <li
-                v-for="event in day.events"
-                :key="event.id || `${event.type}-${event.amount}-${day.date.toISOString()}`"
-                :class="event.type"
-              >
+              <li v-for="event in day.events" :key="event.id || `${event.type}-${event.amount}-${day.date.toISOString()}`" :class="event.type">
                 {{ event.type === 'income' ? '+' : '-' }}{{ formatCurrency(event.amount) }}
               </li>
             </ul>
@@ -42,8 +25,6 @@
         </tr>
       </tbody>
     </table>
-
-    <!-- Monthly Summary -->
     <div class="monthly-summary">
       <div>Income: <span class="income">{{ formatCurrency(totalIncome) }}</span></div>
       <div>Expense: <span class="expense">{{ formatCurrency(totalExpense) }}</span></div>
@@ -53,7 +34,7 @@
 </template>
 
 <script>
-import { setupDatabase, getAllExpenses } from '../database.js'; // [update-11/14]
+import { setupDatabase, getAllExpenses } from '../database.js';
 
 export default {
   props: {
@@ -68,7 +49,7 @@ export default {
       weekDays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
       userLocale: navigator.language || 'en-US',
       currentTime: new Date(),
-      calendarEvents: [] // [update-11/14]
+      calendarEvents: []
     };
   },
   computed: {
@@ -84,14 +65,10 @@ export default {
       return this.selectedDate.getFullYear();
     },
     totalIncome() {
-      return this.calendarEvents
-        .filter(event => event.type === 'income')
-        .reduce((sum, event) => sum + event.amount, 0);
+      return this.calendarEvents.filter(event => event.type === 'income').reduce((sum, event) => sum + event.amount, 0);
     },
     totalExpense() {
-      return this.calendarEvents
-        .filter(event => event.type === 'expense')
-        .reduce((sum, event) => sum + event.amount, 0);
+      return this.calendarEvents.filter(event => event.type === 'expense').reduce((sum, event) => sum + event.amount, 0);
     },
     totalBalance() {
       return this.totalIncome - this.totalExpense;
@@ -112,9 +89,7 @@ export default {
         days.push({
           date,
           isCurrentMonth: date.getMonth() === month,
-          events: this.calendarEvents.filter(event =>
-            new Date(event.date).toISOString().slice(0, 10) === date.toISOString().slice(0, 10)
-          )
+          events: this.calendarEvents.filter(event => new Date(event.date).toISOString().slice(0, 10) === date.toISOString().slice(0, 10))
         });
       }
 
@@ -141,7 +116,7 @@ export default {
         const dbEvents = await getAllExpenses(db);
         this.calendarEvents = dbEvents.map(event => ({
           ...event,
-          date: new Date(event.date) // Ensure date is a Date object
+          date: new Date(event.date)
         }));
       } catch (error) {
         console.error("Failed to fetch events:", error);
@@ -158,10 +133,12 @@ export default {
     goToPreviousMonth() {
       this.selectedDate.setMonth(this.selectedDate.getMonth() - 1);
       this.selectedDate = new Date(this.selectedDate);
+      this.$emit('month-change', this.selectedDate);
     },
     goToNextMonth() {
       this.selectedDate.setMonth(this.selectedDate.getMonth() + 1);
       this.selectedDate = new Date(this.selectedDate);
+      this.$emit('month-change', this.selectedDate);
     },
     formatCurrency(value) {
       return new Intl.NumberFormat(this.userLocale, {
@@ -181,6 +158,10 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+/* Add your CSS styling here */
+</style>
 
 
 <style scoped>
