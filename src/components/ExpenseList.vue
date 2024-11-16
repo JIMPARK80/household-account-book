@@ -6,11 +6,7 @@
     <CalendarView :events="filteredEntries" @month-change="handleMonthChange" />
 
     <!-- Display Monthly Income, Expense, and Total -->
-    <div class="monthly-summary">
-      <div>Income: <span class="income">{{ formatCurrency(monthlyIncome) }}</span></div>
-      <div>Expense: <span class="expense">{{ formatCurrency(monthlyExpense) }}</span></div>
-      <div>Total: <span class="balance">{{ formatCurrency(previousBalance + monthlyIncome - monthlyExpense) }}</span></div>
-    </div>
+
 
     <!-- Transaction List Component (Detailed List) -->
     <h3 class="center-title">-- Detail History (상세이력) -- </h3>
