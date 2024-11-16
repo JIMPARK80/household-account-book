@@ -9,34 +9,37 @@
     <table class="calendar-table">
       <thead>
         <tr>
-          <th v-for="day in abbreviatedWeekDays" :key="day" class="weekday-header">{{ day }}</th>
+          <th v-for="day in abbreviatedWeekDays" :key="day" class="weekday-header">
+            {{ day }}
+          </th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(week, weekIndex) in weeks" :key="weekIndex">
           <td
             v-for="day in week"
-            :key="day.date.toISOString()"
+            :key="day.date?.toISOString()"
             :class="{ 'today': isToday(day.date), 'other-month': !day.isCurrentMonth }"
           >
-            <div class="date-number">{{ day.date.toLocaleString(userLocale, { day: 'numeric' }) }}</div>
+            <div class="date-number">
+              {{ day.date ? day.date.toLocaleString(userLocale, { day: "numeric" }) : "" }}
+            </div>
             <ul class="event-list">
-              <li
-                v-for="event in day.events"
-                :key="event.id || `${event.type}-${event.amount}-${day.date.toISOString()}`"
-                :class="event.type"
-              >
-                {{ event.type === 'income' ? '+' : '-' }}{{ formatCurrency(event.amount) }}
+              <li v-for="event in day.events" :key="event.id">
+                {{ event.description }} - {{ event.amount }}
               </li>
             </ul>
           </td>
         </tr>
       </tbody>
     </table>
-    <div class="monthly-summary">
-      <div>Income: <span class="income">{{ formatCurrency(monthlyIncome) }}</span></div>
-      <div>Expense: <span class="expense">{{ formatCurrency(monthlyExpense) }}</span></div>
-      <div>Total: <span class="balance">{{ formatCurrency(monthlyTotal) }}</span></div>
+    <div class="entries-section">
+      <h3>Entries</h3>
+      <ul>
+        <li v-for="entry in filteredEntries" :key="entry.id">
+          <span>{{ entry.date }}</span>: {{ entry.description }} - {{ entry.amount }}
+        </li>
+      </ul>
     </div>
   </div>
 </template>
@@ -45,19 +48,14 @@
 import { setupDatabase, getAllExpenses } from "../database.js";
 
 export default {
-  props: {
-    events: {
-      type: Array,
-      required: true,
-    },
-  },
   data() {
     return {
       selectedDate: new Date(),
       weekDays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
       userLocale: navigator.language || "en-US",
       currentTime: new Date(),
-      calendarEvents: [],
+      calendarEvents: [], // Fetched from database
+      db: null, // Database instance
     };
   },
   computed: {
@@ -71,28 +69,6 @@ export default {
     },
     currentYear() {
       return this.selectedDate.getFullYear();
-    },
-    // Filter events for the selected month
-    filteredEvents() {
-      const currentMonth = this.selectedDate.getMonth();
-      const currentYear = this.selectedDate.getFullYear();
-      return this.calendarEvents.filter((event) => {
-        const eventDate = new Date(event.date);
-        return eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear;
-      });
-    },
-    monthlyIncome() {
-      return this.filteredEvents
-        .filter((event) => event.type === "income")
-        .reduce((sum, event) => sum + event.amount, 0);
-    },
-    monthlyExpense() {
-      return this.filteredEvents
-        .filter((event) => event.type === "expense")
-        .reduce((sum, event) => sum + event.amount, 0);
-    },
-    monthlyTotal() {
-      return this.monthlyIncome - this.monthlyExpense;
     },
     weeks() {
       const days = [];
@@ -110,7 +86,7 @@ export default {
         days.push({
           date,
           isCurrentMonth: date.getMonth() === month,
-          events: this.filteredEvents.filter(
+          events: this.calendarEvents.filter(
             (event) =>
               new Date(event.date).toISOString().slice(0, 10) === date.toISOString().slice(0, 10)
           ),
@@ -122,6 +98,16 @@ export default {
         weeks.push(days.slice(i, i + 7));
       }
       return weeks;
+    },
+    filteredEntries() {
+      const currentMonth = this.selectedDate.getMonth();
+      const currentYear = this.selectedDate.getFullYear();
+      return this.calendarEvents.filter((event) => {
+        const eventDate = new Date(event.date);
+        return (
+          eventDate.getFullYear() === currentYear && eventDate.getMonth() === currentMonth
+        );
+      });
     },
     formatCurrentTime() {
       return this.currentTime.toLocaleTimeString(this.userLocale, {
@@ -136,14 +122,18 @@ export default {
   methods: {
     async fetchCalendarEvents() {
       try {
-        const db = await setupDatabase();
-        const dbEvents = await getAllExpenses(db);
-        this.calendarEvents = dbEvents.map((event) => ({
-          ...event,
-          date: new Date(event.date),
+        if (!this.db) {
+          this.db = await setupDatabase(); // Set up the database
+        }
+        const events = await getAllExpenses(this.db); // Fetch all expenses
+        this.calendarEvents = events.map((entry) => ({
+          id: entry.id,
+          date: entry.date,
+          description: entry.category || entry.note || "No Description",
+          amount: entry.amount,
         }));
       } catch (error) {
-        console.error("Failed to fetch events:", error);
+        console.error("Error fetching calendar events:", error);
       }
     },
     isToday(date) {
@@ -155,24 +145,18 @@ export default {
       );
     },
     goToPreviousMonth() {
-      this.selectedDate.setMonth(this.selectedDate.getMonth() - 1);
-      this.selectedDate = new Date(this.selectedDate);
-      this.$emit("month-change", this.selectedDate);
+      const previousMonth = new Date(this.selectedDate);
+      previousMonth.setMonth(this.selectedDate.getMonth() - 1);
+      this.selectedDate = previousMonth;
     },
     goToNextMonth() {
-      this.selectedDate.setMonth(this.selectedDate.getMonth() + 1);
-      this.selectedDate = new Date(this.selectedDate);
-      this.$emit("month-change", this.selectedDate);
-    },
-    formatCurrency(value) {
-      return new Intl.NumberFormat(this.userLocale, {
-        style: "currency",
-        currency: "USD",
-      }).format(value);
+      const nextMonth = new Date(this.selectedDate);
+      nextMonth.setMonth(this.selectedDate.getMonth() + 1);
+      this.selectedDate = nextMonth;
     },
   },
   mounted() {
-    this.fetchCalendarEvents();
+    this.fetchCalendarEvents(); // Fetch events from database
     this.timeInterval = setInterval(() => {
       this.currentTime = new Date();
     }, 1000);
@@ -235,20 +219,14 @@ export default {
   font-size: 0.85em;
   margin-top: 5px;
 }
-.income {
-  color: green;
-  font-weight: bold;
-}
-.expense {
-  color: red;
-  font-weight: bold;
-}
-.balance {
-  font-weight: bold;
-}
-.monthly-summary {
-  display: flex;
-  justify-content: space-around;
+.entries-section {
   margin-top: 20px;
+}
+.entries-section ul {
+  list-style-type: none;
+  padding: 0;
+}
+.entries-section li {
+  margin-bottom: 10px;
 }
 </style>

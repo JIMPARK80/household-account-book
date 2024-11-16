@@ -31,13 +31,11 @@
 
 <script>
 import CalendarView from './CalendarView.vue';
-import TransactionList from './TransactionList.vue';
 import AddExpense from './AddExpense.vue';
 
 export default {
   components: {
     CalendarView,
-    TransactionList,
     AddExpense,
   },
   data() {
