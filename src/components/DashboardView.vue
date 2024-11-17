@@ -40,7 +40,6 @@
   </div>
 </template>
 
-
 <script>
 import { setupDatabase, getAllExpenses, getAllIncome } from '../database.js';
 import { ref, onMounted, computed } from 'vue';
@@ -157,23 +156,27 @@ export default {
     });
 
     // Chart options for the bar chart
-    const chartOptions = {
-      responsive: true,
-      scales: {
-        y: {
-          beginAtZero: true,
-        },
+// Bar chart options for better aspect ratio
+const chartOptions = {
+    responsive: true,
+    aspectRatio: 1,  // This makes the chart taller by adjusting the aspect ratio (height: width ratio)
+    scales: {
+      y: {
+        beginAtZero: true,
       },
-      plugins: {
-        legend: {
-          position: 'top',
-        },
-        title: {
-          display: true,
-          text: 'Total Income vs Total Expenditure',
-        },
+    },
+    plugins: {
+      legend: {
+        position: 'top',
       },
-    };
+      title: {
+        display: true,
+        text: 'Total Income vs Total Expenditure',
+      },
+    },
+  };
+
+
 
     // Fetch expenses and income from the database on component mount
     onMounted(async () => {
@@ -182,8 +185,8 @@ export default {
       const allIncome = await getAllIncome(db);  // Get all income
 
       // Assign filtered data to respective variables
-      expenses.value = allExpenses.filter(item => item.type === 'expense');
-      income.value = allIncome.filter(item => item.type === 'income');
+      expenses.value = allExpenses.filter((item) => item.type === 'expense');
+      income.value = allIncome.filter((item) => item.type === 'income');
     });
 
     // Function to move to the next graph
@@ -218,57 +221,97 @@ export default {
 };
 </script>
 
-
 <style scoped>
-/* General Layout */
+/* Dashboard View */
 .dashboard-view {
-  font-family: 'Arial', sans-serif;
-  margin: 20px auto;
-  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* Centers content vertically */
+  align-items: center; /* Centers content horizontally */
+  height: 100%; /* Make the height fill the screen */
+  width: 100%;  /* Make the width fill the screen */
   padding: 20px;
-  background-color: #f4f4f9;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  max-width: 100%; /* Ensure the container does not exceed the screen width */
+  margin-top: 20px; /* Adjust this value to raise the content higher */}
+
+/* Heading Styles for Dashboard */
+.dashboard-view h2, .dashboard-view h3 {
+  margin-bottom: auto; /* Slightly larger margin for more space */
+  font-size: 2em; /* Larger font size for readability */
+  text-align: center; /* Keep the headings centered */
+  width: 100%; /* Ensure headings take full width */
 }
 
-/* Graph Navigation Buttons */
-.nav-buttons {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.nav-button {
-  background-color: #007bff;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.nav-button:hover {
-  background-color: #0056b3;
-}
-
-/* Graphs Section */
-.graphs {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-}
-
-/* Each Graph Container */
-.graph-container {
+/* Chart container to fill available space */
+.chart-container {
   width: 100%;
-  padding: 20px;
+  max-width: 1200px; /* Set a max-width to avoid excessive stretching */
+  height: 500px; /* Adjust the height for consistency */
+  margin-top: 30px; /* Reduce this to bring the chart closer to the title */
 }
 
-/* Make the graphs fill the screen */
-h2 {
-  text-align: center;
-  font-size: 24px;
-  margin-bottom: 20px;
+.chart-container canvas {
+  width: 100% !important; /* Ensures the canvas takes full width */
+  height: 100% !important; /* Ensures the canvas takes full height */
+}
+
+/* Buttons for chart navigation */
+.nav-buttons {
+  display: flex; /* Aligns buttons horizontally */
+  justify-content: center; /* Centers the buttons horizontally */
+  align-items: center; /* Centers the buttons vertically */
+  margin-top: 50px; /* Space between buttons and chart */
+  width: 100%; /* Ensure buttons stretch across the full screen width */
+}
+
+.nav-buttons button {
+  background-color: #007bff; /* Button background color */
+  color: white; /* Button text color */
+  border: none; /* No border around the button */
+  padding: 12px 20px; /* Button padding for size */
+  font-size: 18px; /* Button text size */
+  cursor: pointer; /* Change cursor to pointer when hovered */
+  margin: 0 10px; /* Space between buttons */
+  border-radius: 8px; /* Rounded corners for buttons */
+  transition: background-color 0.3s; /* Smooth background color transition */
+}
+
+.nav-buttons button:hover {
+  background-color: #0056b3; /* Change background color on hover */
+}
+
+/* Make sure the charts do not overflow */
+.chart-container {
+  display: flex;
+  justify-content: center; /* Centers the chart container */
+  align-items: center; /* Vertically aligns the content */
+  overflow: hidden; /* Prevent content from overflowing */
+}
+
+/* Responsive design adjustments */
+@media (max-width: 1200px) {
+  .dashboard-view {
+    padding: 15px; /* Slightly smaller padding for medium screens */
+  }
+  .chart-container {
+    height: 400px; /* Reduce height for smaller screens */
+  }
+  .nav-buttons button {
+    padding: 10px 18px; /* Adjust button size for medium screens */
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-view {
+    height: auto; /* Allow the height to adjust on smaller screens */
+    padding: 10px; /* Less padding on mobile for better space utilization */
+  }
+  .chart-container {
+    height: 300px; /* Make the chart container smaller on mobile devices */
+  }
+  .nav-buttons button {
+    padding: 8px 14px; /* Smaller button size on mobile */
+  }
 }
 </style>
