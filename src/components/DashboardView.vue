@@ -4,65 +4,123 @@
 
     <!-- Summary of Monthly Expenses -->
     <h2>Monthly Expense Summary</h2>
-    <div v-if="monthlySummary.length">
-      <Pie :data="chartData" />
+    <div v-if="monthlySummary.expenses.length">
+      <Pie :data="expenseChartData" />
     </div>
-    <p v-else>No expenses available for summary.</p>
+    <p v-else>No expense data available for summary.</p>
+
+    <!-- Summary of Monthly Income -->
+    <h2>Monthly Income Summary</h2>
+    <div v-if="monthlySummary.income.length">
+      <Pie :data="incomeChartData" />
+    </div>
+    <p v-else>No income data available for summary.</p>
   </div>
 </template>
 
 <script>
-import { setupDatabase, getAllExpenses } from '../database.js';
+import { setupDatabase, getAllExpenses, getAllIncome } from '../database.js';
 import { ref, onMounted, computed } from 'vue';
 import { Pie } from 'vue-chartjs';
-import {
-  Chart as ChartJS,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  CategoryScale,
-} from 'chart.js';
+import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement, CategoryScale } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels'; // Import the plugin
 
-ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale);
+ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale, ChartDataLabels); // Register the plugin
 
 export default {
   name: 'DashboardView',
   components: { Pie },
   setup() {
     const expenses = ref([]);
+    const income = ref([]);
+
+    // Separate expenses and income into categories based on type
     const monthlySummary = computed(() => {
-      const summary = {};
+      const expenseSummary = {};
+      const incomeSummary = {};
+
+      // Categorize each entry based on its type
       expenses.value.forEach((expense) => {
-        if (summary[expense.category]) {
-          summary[expense.category] += expense.amount;
-        } else {
-          summary[expense.category] = expense.amount;
+        if (expense.type === 'expense') {
+          if (expenseSummary[expense.category]) {
+            expenseSummary[expense.category] += expense.amount;
+          } else {
+            expenseSummary[expense.category] = expense.amount;
+          }
         }
       });
-      return Object.keys(summary).map((category) => ({
-        category,
-        amount: summary[category],
-      }));
+
+      income.value.forEach((inc) => {
+        if (inc.type === 'income') {
+          if (incomeSummary[inc.category]) {
+            incomeSummary[inc.category] += inc.amount;
+          } else {
+            incomeSummary[inc.category] = inc.amount;
+          }
+        }
+      });
+
+      return {
+        expenses: Object.keys(expenseSummary).map((category) => ({
+          category,
+          amount: expenseSummary[category],
+        })),
+        income: Object.keys(incomeSummary).map((category) => ({
+          category,
+          amount: incomeSummary[category],
+        })),
+      };
     });
 
-    const chartData = computed(() => ({
-      labels: monthlySummary.value.map((item) => item.category),
+    // Pie chart data for expenses
+    const expenseChartData = computed(() => ({
+      labels: monthlySummary.value.expenses.map((item) => item.category),
       datasets: [
         {
           label: 'Expenses by Category',
-          data: monthlySummary.value.map((item) => item.amount),
+          data: monthlySummary.value.expenses.map((item) => item.amount),
           backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+          plugins: {
+            datalabels: {
+              display: true,
+              color: '#fff',
+              formatter: (value) => `${value}`,
+            },
+          },
+        },
+      ],
+    }));
+
+    // Pie chart data for income
+    const incomeChartData = computed(() => ({
+      labels: monthlySummary.value.income.map((item) => item.category),
+      datasets: [
+        {
+          label: 'Income by Category',
+          data: monthlySummary.value.income.map((item) => item.amount),
+          backgroundColor: ['#4BC0C0', '#FFCE56'],
+          plugins: {
+            datalabels: {
+              display: true,
+              color: '#fff',
+              formatter: (value) => `${value}`,
+            },
+          },
         },
       ],
     }));
 
     onMounted(async () => {
       const db = await setupDatabase();
-      expenses.value = await getAllExpenses(db);
+      const allExpenses = await getAllExpenses(db);  // Get all expenses
+      const allIncome = await getAllIncome(db);  // Get all income
+
+      // Combine both expenses and income in their respective arrays
+      expenses.value = allExpenses.filter(item => item.type === 'expense');
+      income.value = allIncome.filter(item => item.type === 'income');
     });
 
-    return { chartData, monthlySummary };
+    return { expenseChartData, incomeChartData, monthlySummary };
   },
 };
 </script>
@@ -73,12 +131,10 @@ export default {
   margin: 0 auto;
   padding: 20px;
 }
-
 h1 {
   font-size: 24px;
   margin-bottom: 10px;
 }
-
 h2 {
   font-size: 20px;
   margin-top: 20px;

@@ -55,10 +55,9 @@
     <div class="expense-list">
       <h3>Entered Values</h3> <!-- Title for Entered Values Section | 입력된 값 섹션 제목 -->
       <ul>
-        <li v-for="expense in expenses" :key="expense.id">
-          <strong>{{ expense.date }}</strong>: {{ expense.note }} - 
-          {{ type === 'expense' ? 'Expense' : 'Income' }}: 
-          {{ expense.amount }} 
+        <li v-for="expense in currentEntries" :key="expense.id">
+          <strong>{{ expense.date }}</strong>: {{ expense.note }} -
+          {{ type === 'expense' ? 'Expense' : 'Income' }}: {{ expense.amount }}
           <em>({{ expense.category }})</em>
           <!-- Edit Button -->
           <button @click="editEntry(expense)">Edit</button>
@@ -71,7 +70,7 @@
 </template>
 
 <script>
-import { setupDatabase, addExpense, getAllExpenses } from "../database.js";
+import { setupDatabase, addExpense, getAllExpenses, addIncome, getAllIncome } from "../database.js";
 
 export default {
   data() {
@@ -86,6 +85,7 @@ export default {
         category: "", // Selected category | 선택된 카테고리
       },
       expenses: [], // List of entered expenses | 입력된 지출 목록
+      income: [], // List of entered income | 입력된 수입 목록
       expenseCategories: [
         { name: "Food", icon: "fas fa-utensils" }, // 기본 카테고리: 음식
         { name: "Houseware", icon: "fas fa-home" }, // 기본 카테고리: 가구
@@ -112,13 +112,18 @@ export default {
     // Initialize the database and load saved categories and expenses | 데이터베이스 초기화 및 저장된 카테고리와 지출 로드
     const db = await setupDatabase();
 
-    // Load saved expenses | 저장된 지출 항목 로드
+    // Load saved expenses and income | 저장된 지출 항목 로드
     this.expenses = await getAllExpenses(db);
+    this.income = await getAllIncome(db);
   },
   computed: {
     // Return categories based on selected tab (expense or income) | 선택된 탭(지출 또는 수입)에 따라 카테고리 반환
     currentCategories() {
       return this.type === "expense" ? this.expenseCategories : this.incomeCategories;
+    },
+    // Return entries based on selected tab (expense or income) | 선택된 탭에 따라 항목 반환
+    currentEntries() {
+      return this.type === "expense" ? this.expenses : this.income;
     },
   },
   methods: {
@@ -134,31 +139,36 @@ export default {
     },
     // Add or update an entry | 항목 추가 또는 업데이트
     async addOrUpdateEntry() {
-
       if (!this.entry.date || !this.entry.amount || !this.entry.category) {
-        alert("Please complete all required fields."); // 모든 필드를 채워주세요.
+        alert("Please complete all required fields.");
         return;
       }
 
-  const db = await setupDatabase();
+      const db = await setupDatabase();
 
       if (this.isEditing) {
-        // Update the existing entry | 기존 항목 업데이트
+        // Update the existing entry
         const index = this.expenses.findIndex((expense) => expense.id === this.entry.id);
         if (index !== -1) {
-          this.expenses.splice(index, 1, { ...this.entry }); // Update the local state | 로컬 상태 업데이트
+          this.expenses.splice(index, 1, { ...this.entry }); // Update the local state
         }
-        const transaction = db.transaction("expenses", "readwrite");
-        const store = transaction.objectStore("expenses");
-        await store.put({ ...this.entry }); // Update IndexedDB | IndexedDB 업데이트
+
+        const transaction = db.transaction(this.type === 'expense' ? "expenses" : "income", "readwrite");
+        const store = transaction.objectStore(this.type === 'expense' ? "expenses" : "income");
+        await store.put({ ...this.entry }); // Update IndexedDB
       } else {
-        // Add a new entry | 새 항목 추가
-        this.entry.id = Date.now(); // Generate a unique ID | 고유 ID 생성
-        await addExpense(db, { ...this.entry, type: this.type }); // Save to IndexedDB | IndexedDB에 저장
-        this.expenses.push({ ...this.entry }); // Update the local state | 로컬 상태 업데이트
+        // Add a new entry
+        this.entry.id = Date.now(); // Generate a unique ID
+        if (this.type === 'expense') {
+          await addExpense(db, { ...this.entry, type: this.type }); // Save to IndexedDB
+          this.expenses.push({ ...this.entry }); // Update the local state for expenses
+        } else {
+          await addIncome(db, { ...this.entry, type: this.type }); // Save to IndexedDB
+          this.income.push({ ...this.entry }); // Update the local state for income
+        }
       }
 
-      this.resetForm(); // Reset the form | 입력 필드 초기화
+      this.resetForm(); // Reset the form
     },
     // Reset the form | 입력 필드 초기화
     resetForm() {
@@ -171,10 +181,10 @@ export default {
         category: "",
       };
     },
-    editEntry(expense) {
-      this.isEditing = true; // Mark as editing
-      this.entry = { ...expense }; // Load the selected entry into the form
-      this.type = expense.type; // Set the type (expense or income)
+    editEntry(entry) {
+      this.isEditing = true;
+      this.entry = { ...entry };
+      this.type = entry.type; // Set the type (expense or income)
     },
     async deleteEntry(id) {
       if (!confirm("Are you sure you want to delete this entry?")) {
@@ -189,8 +199,8 @@ export default {
 
       // Remove from IndexedDB
       const db = await setupDatabase();
-      const transaction = db.transaction("expenses", "readwrite");
-      const store = transaction.objectStore("expenses");
+      const transaction = db.transaction(this.type === 'expense' ? "expenses" : "income", "readwrite");
+      const store = transaction.objectStore(this.type === 'expense' ? "expenses" : "income");
       await store.delete(id);
     },
   },
