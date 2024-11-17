@@ -2,35 +2,51 @@
   <div class="dashboard-view">
     <h1>Dashboard View</h1>
 
-    <!-- Summary of Monthly Money Flow -->
-    <h2>Monthly Money Flow</h2>
-    <div v-if="monthlySummary.expenses.length && monthlySummary.income.length">
-      <Bar :data="moneyFlowChartData" :options="chartOptions" />
+    <!-- Navigation Buttons -->
+    <div class="nav-buttons">
+      <button @click="previousGraph" class="nav-button">←</button>
+      <button @click="nextGraph" class="nav-button">→</button>
     </div>
-    <p v-else>No data available for money flow comparison.</p>
 
-    <!-- Summary of Monthly Expenses -->
-    <h2>Monthly Expense Summary</h2>
-    <div v-if="monthlySummary.expenses && monthlySummary.expenses.length">
-      <Pie :data="expenseChartData" />
-    </div>
-    <p v-else>No expense data available for summary.</p>
+    <!-- Graphs Displayed Based on Current Selection -->
+    <div class="graphs">
+      <!-- Monthly Money Flow Graph -->
+      <div v-if="currentGraph === 1">
+        <h2>Monthly Money Flow</h2>
+        <div v-if="monthlySummary.expenses.length && monthlySummary.income.length">
+          <Bar :data="moneyFlowChartData" :options="chartOptions" />
+        </div>
+        <p v-else>No data available for money flow comparison.</p>
+      </div>
 
-    <!-- Summary of Monthly Income -->
-    <h2>Monthly Income Summary</h2>
-    <div v-if="monthlySummary.income && monthlySummary.income.length">
-      <Pie :data="incomeChartData" />
+      <!-- Monthly Expense Summary Graph -->
+      <div v-if="currentGraph === 2">
+        <h2>Monthly Expense Summary</h2>
+        <div v-if="monthlySummary.expenses && monthlySummary.expenses.length">
+          <Pie :data="expenseChartData" />
+        </div>
+        <p v-else>No expense data available for summary.</p>
+      </div>
+
+      <!-- Monthly Income Summary Graph -->
+      <div v-if="currentGraph === 3">
+        <h2>Monthly Income Summary</h2>
+        <div v-if="monthlySummary.income && monthlySummary.income.length">
+          <Pie :data="incomeChartData" />
+        </div>
+        <p v-else>No income data available for summary.</p>
+      </div>
     </div>
-    <p v-else>No income data available for summary.</p>
   </div>
 </template>
+
 
 <script>
 import { setupDatabase, getAllExpenses, getAllIncome } from '../database.js';
 import { ref, onMounted, computed } from 'vue';
 import { Pie, Bar } from 'vue-chartjs';
 import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement, CategoryScale, BarElement, LinearScale } from 'chart.js';
-import ChartDataLabels from 'chartjs-plugin-datalabels'; // Import the plugin
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 // Register Chart.js components
 ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale, BarElement, LinearScale, ChartDataLabels);
@@ -41,6 +57,7 @@ export default {
   setup() {
     const expenses = ref([]);
     const income = ref([]);
+    const currentGraph = ref(1); // Default: Show the first graph (Monthly Money Flow)
 
     // Compute monthly summary for both expenses and income
     const monthlySummary = computed(() => {
@@ -139,6 +156,7 @@ export default {
       };
     });
 
+    // Chart options for the bar chart
     const chartOptions = {
       responsive: true,
       scales: {
@@ -168,23 +186,89 @@ export default {
       income.value = allIncome.filter(item => item.type === 'income');
     });
 
-    return { expenseChartData, incomeChartData, monthlySummary, moneyFlowChartData, chartOptions };
+    // Function to move to the next graph
+    const nextGraph = () => {
+      if (currentGraph.value < 3) {
+        currentGraph.value++;
+      } else {
+        currentGraph.value = 1; // Loop back to the first graph
+      }
+    };
+
+    // Function to move to the previous graph
+    const previousGraph = () => {
+      if (currentGraph.value > 1) {
+        currentGraph.value--;
+      } else {
+        currentGraph.value = 3; // Loop back to the last graph
+      }
+    };
+
+    return {
+      monthlySummary,
+      moneyFlowChartData,
+      chartOptions,
+      currentGraph,
+      nextGraph,
+      previousGraph,
+      expenseChartData,
+      incomeChartData,
+    };
   },
 };
 </script>
 
+
 <style scoped>
+/* General Layout */
 .dashboard-view {
-  max-width: 500px;
-  margin: 0 auto;
+  font-family: 'Arial', sans-serif;
+  margin: 20px auto;
+  max-width: 800px;
+  padding: 20px;
+  background-color: #f4f4f9;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Graph Navigation Buttons */
+.nav-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.nav-button {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.nav-button:hover {
+  background-color: #0056b3;
+}
+
+/* Graphs Section */
+.graphs {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+/* Each Graph Container */
+.graph-container {
+  width: 100%;
   padding: 20px;
 }
-h1 {
-  font-size: 24px;
-  margin-bottom: 10px;
-}
+
+/* Make the graphs fill the screen */
 h2 {
-  font-size: 20px;
-  margin-top: 20px;
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 20px;
 }
 </style>
