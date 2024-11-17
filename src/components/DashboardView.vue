@@ -158,6 +158,7 @@ export default {
     // Chart options for the bar chart
     const chartOptions = {
       responsive: true,
+      aspectRatio: 1,  // This makes the chart taller by adjusting the aspect ratio (height: width ratio)
       scales: {
         y: {
           beginAtZero: true,
@@ -199,6 +200,7 @@ export default {
 
     const pieChartOptions = {
       responsive: true,
+      aspectRatio: 1,
       plugins: {
         legend: {
           position: 'top',
