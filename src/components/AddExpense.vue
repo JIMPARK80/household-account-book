@@ -60,6 +60,10 @@
           {{ type === 'expense' ? 'Expense' : 'Income' }}: 
           {{ expense.amount }} 
           <em>({{ expense.category }})</em>
+          <!-- Edit Button -->
+          <button @click="editEntry(expense)">Edit</button>
+          <!-- Delete Button -->
+          <button @click="deleteEntry(expense.id)">Delete</button>
         </li>
       </ul>
     </div>
@@ -83,13 +87,24 @@ export default {
       },
       expenses: [], // List of entered expenses | 입력된 지출 목록
       expenseCategories: [
-        { name: "Food", icon: "fas fa-utensils" }, // 기본 카테고리
-        { name: "Transport", icon: "fas fa-bus" },
-        { name: "Car", icon: "fas fa-car" },
+        { name: "Food", icon: "fas fa-utensils" }, // 기본 카테고리: 음식
+        { name: "Houseware", icon: "fas fa-home" }, // 기본 카테고리: 가구
+        { name: "Clothes", icon: "fas fa-tshirt" }, // 기본 카테고리: 의류
+        { name: "Cosmetic", icon: "fas fa-paint-brush" }, // 기본 카테고리: 화장품
+        { name: "Medical", icon: "fas fa-heartbeat" }, // 기본 카테고리: 의료
+        { name: "Education", icon: "fas fa-book" }, // 기본 카테고리: 교육
+        { name: "Electric bill", icon: "fas fa-lightbulb" }, // 기본 카테고리: 전기 요금
+        { name: "Transportation", icon: "fas fa-bus" }, // 기본 카테고리: 교통
+        { name: "Contact fee", icon: "fas fa-phone" }, // 기본 카테고리: 통신비
+        { name: "Housing expenses", icon: "fas fa-home" }, // 기본 카테고리: 주거비
       ],
       incomeCategories: [
-        { name: "Salary", icon: "fas fa-wallet" }, // 기본 카테고리
-        { name: "Freelance", icon: "fas fa-laptop" },
+        { name: "Salary", icon: "fas fa-wallet" }, // 기본 카테고리: 월급
+        { name: "Pocket money", icon: "fas fa-piggy-bank" }, // 기본 카테고리: 용돈
+        { name: "Bonus", icon: "fas fa-gift" }, // 기본 카테고리: 보너스
+        { name: "Side job", icon: "fas fa-money-bill-alt" }, // 기본 카테고리: 부업
+        { name: "Investment", icon: "fas fa-coins" }, // 기본 카테고리: 투자
+        { name: "Extra", icon: "fas fa-hand-holding-usd" }, // 기본 카테고리: 기타 수익
       ],
     };
   },
@@ -119,15 +134,30 @@ export default {
     },
     // Add or update an entry | 항목 추가 또는 업데이트
     async addOrUpdateEntry() {
+
       if (!this.entry.date || !this.entry.amount || !this.entry.category) {
-        alert("Please complete all required fields. | 모든 필드를 채워주세요.");
+        alert("Please complete all required fields."); // 모든 필드를 채워주세요.
         return;
       }
 
-      const db = await setupDatabase();
-      this.entry.id = Date.now(); // Generate unique ID | 고유 ID 생성
-      await addExpense(db, { ...this.entry, type: this.type }); // Save entry to IndexedDB | 항목을 IndexedDB에 저장
-      this.expenses.push({ ...this.entry }); // Update UI | UI 업데이트
+  const db = await setupDatabase();
+
+      if (this.isEditing) {
+        // Update the existing entry | 기존 항목 업데이트
+        const index = this.expenses.findIndex((expense) => expense.id === this.entry.id);
+        if (index !== -1) {
+          this.expenses.splice(index, 1, { ...this.entry }); // Update the local state | 로컬 상태 업데이트
+        }
+        const transaction = db.transaction("expenses", "readwrite");
+        const store = transaction.objectStore("expenses");
+        await store.put({ ...this.entry }); // Update IndexedDB | IndexedDB 업데이트
+      } else {
+        // Add a new entry | 새 항목 추가
+        this.entry.id = Date.now(); // Generate a unique ID | 고유 ID 생성
+        await addExpense(db, { ...this.entry, type: this.type }); // Save to IndexedDB | IndexedDB에 저장
+        this.expenses.push({ ...this.entry }); // Update the local state | 로컬 상태 업데이트
+      }
+
       this.resetForm(); // Reset the form | 입력 필드 초기화
     },
     // Reset the form | 입력 필드 초기화
@@ -140,6 +170,28 @@ export default {
         amount: 0,
         category: "",
       };
+    },
+    editEntry(expense) {
+      this.isEditing = true; // Mark as editing
+      this.entry = { ...expense }; // Load the selected entry into the form
+      this.type = expense.type; // Set the type (expense or income)
+    },
+    async deleteEntry(id) {
+      if (!confirm("Are you sure you want to delete this entry?")) {
+        return;
+      }
+
+      // Remove from local state
+      const index = this.expenses.findIndex((expense) => expense.id === id);
+      if (index !== -1) {
+        this.expenses.splice(index, 1);
+      }
+
+      // Remove from IndexedDB
+      const db = await setupDatabase();
+      const transaction = db.transaction("expenses", "readwrite");
+      const store = transaction.objectStore("expenses");
+      await store.delete(id);
     },
   },
 };
