@@ -2,16 +2,23 @@
   <div class="dashboard-view">
     <h1>Dashboard View</h1>
 
+    <!-- Summary of Monthly Money Flow -->
+    <h2>Monthly Money Flow</h2>
+    <div v-if="monthlySummary.expenses.length && monthlySummary.income.length">
+      <Bar :data="moneyFlowChartData" :options="chartOptions" />
+    </div>
+    <p v-else>No data available for money flow comparison.</p>
+
     <!-- Summary of Monthly Expenses -->
     <h2>Monthly Expense Summary</h2>
-    <div v-if="monthlySummary.expenses.length">
+    <div v-if="monthlySummary.expenses && monthlySummary.expenses.length">
       <Pie :data="expenseChartData" />
     </div>
     <p v-else>No expense data available for summary.</p>
 
     <!-- Summary of Monthly Income -->
     <h2>Monthly Income Summary</h2>
-    <div v-if="monthlySummary.income.length">
+    <div v-if="monthlySummary.income && monthlySummary.income.length">
       <Pie :data="incomeChartData" />
     </div>
     <p v-else>No income data available for summary.</p>
@@ -21,42 +28,38 @@
 <script>
 import { setupDatabase, getAllExpenses, getAllIncome } from '../database.js';
 import { ref, onMounted, computed } from 'vue';
-import { Pie } from 'vue-chartjs';
-import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement, CategoryScale } from 'chart.js';
+import { Pie, Bar } from 'vue-chartjs';
+import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement, CategoryScale, BarElement, LinearScale } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels'; // Import the plugin
 
-ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale, ChartDataLabels); // Register the plugin
+// Register Chart.js components
+ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale, BarElement, LinearScale, ChartDataLabels);
 
 export default {
   name: 'DashboardView',
-  components: { Pie },
+  components: { Pie, Bar },
   setup() {
     const expenses = ref([]);
     const income = ref([]);
 
-    // Separate expenses and income into categories based on type
+    // Compute monthly summary for both expenses and income
     const monthlySummary = computed(() => {
       const expenseSummary = {};
       const incomeSummary = {};
 
-      // Categorize each entry based on its type
       expenses.value.forEach((expense) => {
-        if (expense.type === 'expense') {
-          if (expenseSummary[expense.category]) {
-            expenseSummary[expense.category] += expense.amount;
-          } else {
-            expenseSummary[expense.category] = expense.amount;
-          }
+        if (expenseSummary[expense.category]) {
+          expenseSummary[expense.category] += expense.amount;
+        } else {
+          expenseSummary[expense.category] = expense.amount;
         }
       });
 
       income.value.forEach((inc) => {
-        if (inc.type === 'income') {
-          if (incomeSummary[inc.category]) {
-            incomeSummary[inc.category] += inc.amount;
-          } else {
-            incomeSummary[inc.category] = inc.amount;
-          }
+        if (incomeSummary[inc.category]) {
+          incomeSummary[inc.category] += inc.amount;
+        } else {
+          incomeSummary[inc.category] = inc.amount;
         }
       });
 
@@ -110,17 +113,62 @@ export default {
       ],
     }));
 
+    // Bar chart data for Total Income vs Total Expenditure
+    const moneyFlowChartData = computed(() => {
+      const totalIncome = income.value.reduce((sum, inc) => sum + inc.amount, 0);
+      const totalExpenditure = expenses.value.reduce((sum, exp) => sum + exp.amount, 0);
+
+      return {
+        labels: ['Total'],
+        datasets: [
+          {
+            label: 'Total Income',
+            data: [totalIncome],
+            backgroundColor: '#4BC0C0',
+            borderColor: '#36A2EB',
+            borderWidth: 1,
+          },
+          {
+            label: 'Total Expenditure',
+            data: [totalExpenditure],
+            backgroundColor: '#FF6384',
+            borderColor: '#FFCE56',
+            borderWidth: 1,
+          },
+        ],
+      };
+    });
+
+    const chartOptions = {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+        },
+      },
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+        title: {
+          display: true,
+          text: 'Total Income vs Total Expenditure',
+        },
+      },
+    };
+
+    // Fetch expenses and income from the database on component mount
     onMounted(async () => {
       const db = await setupDatabase();
       const allExpenses = await getAllExpenses(db);  // Get all expenses
       const allIncome = await getAllIncome(db);  // Get all income
 
-      // Combine both expenses and income in their respective arrays
+      // Assign filtered data to respective variables
       expenses.value = allExpenses.filter(item => item.type === 'expense');
       income.value = allIncome.filter(item => item.type === 'income');
     });
 
-    return { expenseChartData, incomeChartData, monthlySummary };
+    return { expenseChartData, incomeChartData, monthlySummary, moneyFlowChartData, chartOptions };
   },
 };
 </script>
