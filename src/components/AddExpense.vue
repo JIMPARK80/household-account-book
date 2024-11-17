@@ -208,235 +208,241 @@ export default {
 <style>
 /* 전반적인 레이아웃 */
 .dashboard-view {
- font-family: 'Arial', sans-serif;
- margin: 20px auto;
- max-width: 800px;
- padding: 20px;
- background-color: #f4f4f9;
- border-radius: 10px;
- box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  font-family: 'Arial', sans-serif;  /* Use a simple, clean font */
+  margin: 20px auto;
+  max-width: 800px;
+  padding: 20px;
+  background-color: #f4f4f9;  /* Soft background */
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  color: #333;  /* Default text color */
+  line-height: 1.6;  /* Adjust line height for better spacing */
 }
 
 /* 수입 및 지출 요약 섹션 */
 .income-expense-summary {
- display: flex;
- justify-content: space-between;
- margin-bottom: 20px;
- padding: 15px;
- background-color: #ffffff;
- border-radius: 10px;
- box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* 지출, 수입, 총 요약 */
 .expense-summary, .income-summary, .total-summary {
- display: flex;
- flex-direction: column;
- align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .expense-summary {
- color: red;
- font-size: 20px;
- font-weight: bold;
+  color: red;
+  font-size: 20px;
+  font-weight: bold;
 }
 
 .income-summary {
- color: blue;
- font-size: 20px;
- font-weight: bold;
+  color: blue;
+  font-size: 20px;
+  font-weight: bold;
 }
 
 .total-summary {
- font-weight: bold;
- font-size: 24px;
+  font-weight: bold;
+  font-size: 24px;
 }
 
 .total-summary .total {
- color: green;
+  color: green;
 }
 
 /* 탭 버튼 */
 .tabs {
- display: flex;
- justify-content: space-between;
- margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
 }
 
 .tabs button {
- background-color: #f0f0f0;
- border: 1px solid #ccc;
- padding: 10px 20px;
- font-size: 16px;
- cursor: pointer;
- border-radius: 5px;
- transition: all 0.3s ease;
- width: 48%;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+  width: 48%;
 }
 
 .tabs button.active {
- background-color: #007bff;
- color: white;
+  background-color: #007bff;
+  color: white;
 }
 
 .tabs button:hover {
- background-color: #e1e1e1;
+  background-color: #e1e1e1;
 }
 
 /* 입력 폼 스타일 */
 .form-group {
- margin-bottom: 20px;
+  margin-bottom: 20px;
 }
 
 .form-group label {
- display: block;
- font-size: 16px;
- margin-bottom: 5px;
+  display: block;
+  font-size: 16px;
+  margin-bottom: 5px;
 }
 
 .form-group input {
- width: 100%;
- padding: 10px;
- font-size: 16px;
- border: 1px solid #ccc;
- border-radius: 5px;
- margin-bottom: 10px;
- transition: border-color 0.3s ease;
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  transition: border-color 0.3s ease;
 }
 
 .form-group input:focus {
- border-color: #007bff;
- outline: none;
+  border-color: #007bff;
+  outline: none;
 }
 
 /* 카테고리 섹션 */
 .category-section {
- margin-top: 20px;
+  margin-top: 50px;
 }
 
 .category-section h3 {
- font-size: 18px;
- margin-bottom: 10px;
- text-align: center;
+  font-size: 20px;
+  margin-bottom: 10px;
+  text-align: center;
+  font-weight: bold; /* Stronger heading */
+  color: #333; /* Darker text color */
 }
 
 .category-grid {
- display: grid;
- grid-template-columns: repeat(4, 1fr);
- gap: 15px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
 }
 
 .category {
- display: flex;
- flex-direction: column;
- align-items: center;
- padding: 15px;
- border: 2px solid transparent;
- border-radius: 8px;
- cursor: pointer;
- transition: background-color 0.3s ease, border-color 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(131, 131, 131, 0.938); /* Black border added */
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .category:hover {
- background-color: #f0f8ff;
+  background-color: #f0f8ff;
 }
 
 .category.selected {
- background-color: #e6f7ff;
- border-color: #007bff;
+  background-color: #e6f7ff;
+  border-color: #007bff;
 }
 
 .category i {
- font-size: 30px;
- margin-bottom: 10px;
+  font-size: 30px;
+  margin-bottom: 10px;
 }
 
 .category span {
- font-size: 16px;
- font-weight: bold;
+  font-size: 16px;
+  font-weight: bold;
+  color: #333; /* Ensure the text inside the category is easily readable */
 }
 
 /* 제출 버튼 */
 .submit-button {
- background-color: #007bff;
- color: white;
- padding: 12px 20px;
- font-size: 16px;
- width: 100%;
- border: none;
- border-radius: 8px;
- cursor: pointer;
- transition: background-color 0.3s ease;
+  margin-top: 30px;
+  background-color: #007bff;
+  color: white;
+  padding: 12px 20px;
+  font-size: 16px;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .submit-button:hover {
- background-color: #0056b3;
+  background-color: #0056b3;
 }
 
 /* 입력된 값 리스트 */
 .expense-list {
- margin-top: 20px;
+  margin-top: 50px;
 }
 
 .expense-list h3 {
- font-size: 18px;
- margin-bottom: 10px;
- text-align: center;
+  font-size: 18px;
+  margin-bottom: 10px;
+  text-align: center;
 }
 
 .expense-list ul {
- list-style-type: none;
- padding: 0;
+  list-style-type: none;
+  padding: 0;
 }
 
 .expense-list li {
- background-color: #ffffff;
- padding: 10px;
- margin-bottom: 10px;
- border-radius: 8px;
- box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
- display: flex;
- justify-content: space-between;
- align-items: center;
+  background-color: #ffffff;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .expense-list li strong {
- font-weight: bold;
+  font-weight: bold;
 }
 
 .expense-list li em {
- font-style: italic;
- color: #555;
+  font-style: italic;
+  color: #555;
 }
 
 .expense-list button {
- background-color: #f44336;
- color: white;
- padding: 5px 10px;
- font-size: 14px;
- border: none;
- border-radius: 5px;
- cursor: pointer;
- transition: background-color 0.3s ease;
+  background-color: #f44336;
+  color: white;
+  padding: 5px 10px;
+  font-size: 14px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .expense-list button:hover {
- background-color: #e53935;
+  background-color: #e53935;
 }
 
 /* 반응형 디자인 */
 @media (max-width: 768px) {
- .category-grid {
-   grid-template-columns: repeat(2, 1fr); /* 작은 화면에서 카테고리 그리드를 두 열로 변경 */
- }
+  .category-grid {
+    grid-template-columns: repeat(2, 1fr); /* 작은 화면에서 카테고리 그리드를 두 열로 변경 */
+  }
 
- .expense-summary, .income-summary, .total-summary {
-   margin-bottom: 15px;
- }
+  .expense-summary, .income-summary, .total-summary {
+    margin-bottom: 15px;
+  }
 
- .tabs button {
-   width: 100%;
-   margin-bottom: 10px; /* 버튼을 전체 너비로 설정 */
- }
+  .tabs button {
+    width: 100%;
+    margin-bottom: 10px; /* 버튼을 전체 너비로 설정 */
+  }
 }
 </style>

@@ -23,7 +23,7 @@
       <div v-if="currentGraph === 2">
         <h2>Monthly Expense Summary</h2>
         <div v-if="monthlySummary.expenses && monthlySummary.expenses.length">
-          <Pie :data="expenseChartData" />
+          <Pie :data="expenseChartData" :options="pieChartOptions"/>
         </div>
         <p v-else>No expense data available for summary.</p>
       </div>
@@ -32,7 +32,7 @@
       <div v-if="currentGraph === 3">
         <h2>Monthly Income Summary</h2>
         <div v-if="monthlySummary.income && monthlySummary.income.length">
-          <Pie :data="incomeChartData" />
+          <Pie :data="incomeChartData" :options="pieChartOptions" />
         </div>
         <p v-else>No income data available for summary.</p>
       </div>
@@ -156,33 +156,74 @@ export default {
     });
 
     // Chart options for the bar chart
-// Bar chart options for better aspect ratio
-const chartOptions = {
-    responsive: true,
-    aspectRatio: 1,  // This makes the chart taller by adjusting the aspect ratio (height: width ratio)
-    scales: {
-      y: {
-        beginAtZero: true,
+    const chartOptions = {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: '#333',
+          },
+          grid: {
+            color: '#ddd',
+          },
+        },
+        x: {
+          ticks: {
+            color: '#333',
+          },
+          grid: {
+            color: '#ddd',
+          },
+        },
       },
-    },
-    plugins: {
-      legend: {
-        position: 'top',
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            color: '#333',
+          },
+        },
+        tooltip: {
+          titleColor: '#333',
+          bodyColor: '#333',
+        },
+        datalabels: {
+          color: '#333',
+          font: {
+            weight: 'bold',
+          },
+        },
       },
-      title: {
-        display: true,
-        text: 'Total Income vs Total Expenditure',
-      },
-    },
-  };
+    };
 
-
+    const pieChartOptions = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            color: '#333',
+          },
+        },
+        tooltip: {
+          titleColor: '#333',
+          bodyColor: '#333',
+        },
+        datalabels: {
+          color: '#333',
+          font: {
+            weight: 'bold',
+          },
+        },
+      },
+    };
 
     // Fetch expenses and income from the database on component mount
     onMounted(async () => {
       const db = await setupDatabase();
-      const allExpenses = await getAllExpenses(db);  // Get all expenses
-      const allIncome = await getAllIncome(db);  // Get all income
+      const allExpenses = await getAllExpenses(db);
+      const allIncome = await getAllIncome(db);
 
       // Assign filtered data to respective variables
       expenses.value = allExpenses.filter((item) => item.type === 'expense');
@@ -211,6 +252,7 @@ const chartOptions = {
       monthlySummary,
       moneyFlowChartData,
       chartOptions,
+      pieChartOptions,
       currentGraph,
       nextGraph,
       previousGraph,
@@ -226,92 +268,116 @@ const chartOptions = {
 .dashboard-view {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start; /* Centers content vertically */
-  align-items: center; /* Centers content horizontally */
-  height: 100%; /* Make the height fill the screen */
-  width: 100%;  /* Make the width fill the screen */
+  justify-content: flex-start;
+  align-items: center;
+  height: 100%;
+  width: 100%;
   padding: 20px;
   box-sizing: border-box;
-  max-width: 100%; /* Ensure the container does not exceed the screen width */
-  margin-top: 20px; /* Adjust this value to raise the content higher */}
+  max-width: 100%;
+  margin-top: 20px;
+}
 
 /* Heading Styles for Dashboard */
 .dashboard-view h2, .dashboard-view h3 {
-  margin-bottom: auto; /* Slightly larger margin for more space */
-  font-size: 2em; /* Larger font size for readability */
-  text-align: center; /* Keep the headings centered */
-  width: 100%; /* Ensure headings take full width */
+  margin-bottom: 20px;
+  font-size: 2.8em;
+  font-weight: bold;
+  text-align: center;
+  width: 100%;
 }
 
 /* Chart container to fill available space */
 .chart-container {
   width: 100%;
-  max-width: 1200px; /* Set a max-width to avoid excessive stretching */
-  height: 500px; /* Adjust the height for consistency */
-  margin-top: 30px; /* Reduce this to bring the chart closer to the title */
+  max-width: 100%;
+  height: 500px;
+  margin-top: 30px;
 }
 
 .chart-container canvas {
-  width: 100% !important; /* Ensures the canvas takes full width */
-  height: 100% !important; /* Ensures the canvas takes full height */
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* Buttons for chart navigation */
 .nav-buttons {
-  display: flex; /* Aligns buttons horizontally */
-  justify-content: center; /* Centers the buttons horizontally */
-  align-items: center; /* Centers the buttons vertically */
-  margin-top: 50px; /* Space between buttons and chart */
-  width: 100%; /* Ensure buttons stretch across the full screen width */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 50px;
+  width: 100%;
 }
 
 .nav-buttons button {
-  background-color: #007bff; /* Button background color */
-  color: white; /* Button text color */
-  border: none; /* No border around the button */
-  padding: 12px 20px; /* Button padding for size */
-  font-size: 18px; /* Button text size */
-  cursor: pointer; /* Change cursor to pointer when hovered */
-  margin: 0 10px; /* Space between buttons */
-  border-radius: 8px; /* Rounded corners for buttons */
-  transition: background-color 0.3s; /* Smooth background color transition */
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  font-size: 18px;
+  cursor: pointer;
+  margin: 0 10px;
+  border-radius: 8px;
+  transition: background-color 0.3s;
 }
 
 .nav-buttons button:hover {
-  background-color: #0056b3; /* Change background color on hover */
+  background-color: #0056b3;
 }
 
 /* Make sure the charts do not overflow */
 .chart-container {
   display: flex;
-  justify-content: center; /* Centers the chart container */
-  align-items: center; /* Vertically aligns the content */
-  overflow: hidden; /* Prevent content from overflowing */
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
 }
 
-/* Responsive design adjustments */
+/* Responsive Design Adjustments */
 @media (max-width: 1200px) {
   .dashboard-view {
-    padding: 15px; /* Slightly smaller padding for medium screens */
+    padding: 15px;
   }
+
   .chart-container {
-    height: 400px; /* Reduce height for smaller screens */
+    height: 400px;
   }
+
   .nav-buttons button {
-    padding: 10px 18px; /* Adjust button size for medium screens */
+    padding: 10px 18px;
+  }
+
+  .dashboard-view h2, .dashboard-view h3 {
+    font-size: 2.5em;
   }
 }
 
 @media (max-width: 768px) {
   .dashboard-view {
-    height: auto; /* Allow the height to adjust on smaller screens */
-    padding: 10px; /* Less padding on mobile for better space utilization */
+    height: auto;
+    padding: 10px;
   }
+
   .chart-container {
-    height: 300px; /* Make the chart container smaller on mobile devices */
+    height: 300px;
   }
+
   .nav-buttons button {
-    padding: 8px 14px; /* Smaller button size on mobile */
+    padding: 8px 14px;
+  }
+
+  .dashboard-view h2, .dashboard-view h3 {
+    font-size: 2em;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-view h2, .dashboard-view h3 {
+    font-size: 1.5em;
+  }
+
+  .nav-buttons button {
+    padding: 6px 12px;
   }
 }
 </style>
