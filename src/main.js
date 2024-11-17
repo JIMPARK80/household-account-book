@@ -5,6 +5,10 @@ import App from './App.vue';
 import router from './router'; // Import the router
 import { setupDatabase, addExpense, getAllExpenses } from './database.js'; // Import IndexedDB functions
 
+import "@fortawesome/fontawesome-free/css/all.css";
+import "@fortawesome/fontawesome-free/js/all.js";
+
+
 // Migrate data from localStorage to IndexedDB if needed
 async function migrateLocalStorageToIndexedDB() {
   const db = await setupDatabase();

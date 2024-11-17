@@ -5,7 +5,6 @@
       <h2>My Budget App</h2>
       <router-link to="/" class="nav-item" active-class="active-link">Dashboard</router-link>
       <router-link to="/add-expense" class="nav-item" active-class="active-link">Input</router-link>
-      <router-link to="/expense-list" class="nav-item" active-class="active-link">Expense List</router-link>
     </nav>
 
     <!-- Main Content Area -->

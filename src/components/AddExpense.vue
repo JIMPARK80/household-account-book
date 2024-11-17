@@ -1,268 +1,182 @@
 <template>
   <div class="input-form">
-    <!-- Tabs for Expense and Income -->
+    <!-- Tabs for Expense and Income | 지출 및 수입을 선택할 탭 -->
     <div class="tabs">
       <button @click="setType('expense')" :class="{ active: type === 'expense' }">Expense</button>
       <button @click="setType('income')" :class="{ active: type === 'income' }">Income</button>
     </div>
 
-    <!-- Input Form -->
+    <!-- Input Form | 입력 폼 -->
     <form @submit.prevent="addOrUpdateEntry">
-      <!-- Date Field -->
+      <!-- Date Input | 날짜 입력 -->
       <div class="form-group">
         <label>Date:</label>
         <input v-model="entry.date" type="date" required />
       </div>
 
-      <!-- Note Field -->
+      <!-- Note Input | 메모 입력 -->
       <div class="form-group">
         <label>Note:</label>
         <input v-model="entry.note" type="text" placeholder="Enter value" />
       </div>
 
-      <!-- Amount Field -->
+      <!-- Amount Input | 금액 입력 -->
       <div class="form-group">
         <label>{{ type === 'expense' ? 'Expense' : 'Income' }}:</label>
         <input v-model="entry.amount" type="number" placeholder="0.00" required />
       </div>
 
-      <!-- Category Selection with Custom Category Option -->
+      <!-- Category Section | 카테고리 섹션 -->
       <div class="category-section">
-        <h3>Category</h3>
+        <h3>Category</h3> <!-- Title for Category Section | 카테고리 섹션 제목 -->
+
+        <!-- Category Grid | 카테고리 목록 -->
         <div class="category-grid">
           <div
             v-for="category in currentCategories"
             :key="category.name"
             :class="{ selected: entry.category === category.name }"
-            @click="selectCategory(category.name)"
             class="category"
+            @click="selectCategory(category.name)"
           >
+            <!-- Category Icon | 카테고리 아이콘 -->
             <i :class="category.icon"></i>
+            <!-- Category Name | 카테고리 이름 -->
             <span>{{ category.name }}</span>
           </div>
-          <!-- Button to Add/Edit Custom Categories -->
-          <div class="category custom-category" @click="addingCustomCategory = true">
-            <span>Edit</span>
-          </div>
-        </div>
-
-        <!-- Custom Category Input -->
-        <div v-if="addingCustomCategory" class="custom-category-input">
-          <input v-model="newCategory" placeholder="Enter new category" />
-          <button @click="addCustomCategory">Add Category</button>
-          <button @click="cancelCustomCategory">Cancel</button>
         </div>
       </div>
 
-      <!-- Submit Button -->
+      <!-- Submit Button | 제출 버튼 -->
       <button type="submit" class="submit-button">{{ isEditing ? 'Update' : 'Submit' }}</button>
     </form>
+
+    <!-- Display Entered Values | 입력된 값 표시 -->
+    <div class="expense-list">
+      <h3>Entered Values</h3> <!-- Title for Entered Values Section | 입력된 값 섹션 제목 -->
+      <ul>
+        <li v-for="expense in expenses" :key="expense.id">
+          <strong>{{ expense.date }}</strong>: {{ expense.note }} - 
+          {{ type === 'expense' ? 'Expense' : 'Income' }}: 
+          {{ expense.amount }} 
+          <em>({{ expense.category }})</em>
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 
 <script>
-import { format, toZonedTime } from 'date-fns-tz';
+import { setupDatabase, addExpense, getAllExpenses } from "../database.js";
 
 export default {
-  props: {
-    editingEntry: {
-      type: Object,
-      default: null
-    }
-  },
   data() {
     return {
-      isEditing: false,
-      type: 'expense', // Default to expense
+      isEditing: false, // Whether we are editing an entry | 항목을 수정 중인지 여부
+      type: "expense", // Default tab is 'expense' | 기본 탭은 '지출'
       entry: {
-        id: null,
-        date: this.getTodayDate(), // Default to today’s date in Toronto timezone
-        note: '', // New field for additional notes
-        amount: 0,
-        category: '',
+        id: null, // Entry ID | 항목 ID
+        date: new Date().toISOString().split("T")[0], // Today's date | 오늘 날짜
+        note: "", // Note for the entry | 항목에 대한 메모
+        amount: 0, // Amount for the entry | 항목의 금액
+        category: "", // Selected category | 선택된 카테고리
       },
+      expenses: [], // List of entered expenses | 입력된 지출 목록
       expenseCategories: [
-        { name: 'Food', icon: 'fas fa-utensils' },
-        // Add other categories here...
+        { name: "Food", icon: "fas fa-utensils" }, // 기본 카테고리
+        { name: "Transport", icon: "fas fa-bus" },
+        { name: "Car", icon: "fas fa-car" },
       ],
       incomeCategories: [
-        { name: 'Salary', icon: 'fas fa-wallet' },
-        // Add other categories here...
+        { name: "Salary", icon: "fas fa-wallet" }, // 기본 카테고리
+        { name: "Freelance", icon: "fas fa-laptop" },
       ],
-      addingCustomCategory: false, // Track if adding custom category
-      newCategory: '', // Stores new category name
     };
   },
-  watch: {
-    editingEntry: {
-      immediate: true,
-      handler(newValue) {
-        if (newValue) {
-          // Load entry data into form for editing
-          this.isEditing = true;
-          this.entry = { ...newValue };
-          this.type = newValue.type;
-        }
-      }
-    }
+  async mounted() {
+    // Initialize the database and load saved categories and expenses | 데이터베이스 초기화 및 저장된 카테고리와 지출 로드
+    const db = await setupDatabase();
+
+    // Load saved expenses | 저장된 지출 항목 로드
+    this.expenses = await getAllExpenses(db);
   },
   computed: {
+    // Return categories based on selected tab (expense or income) | 선택된 탭(지출 또는 수입)에 따라 카테고리 반환
     currentCategories() {
-      return this.type === 'expense' ? this.expenseCategories : this.incomeCategories;
-    }
+      return this.type === "expense" ? this.expenseCategories : this.incomeCategories;
+    },
   },
   methods: {
-    getTodayDate() {
-      const torontoTimezone = 'America/Toronto';
-      const zonedDate = toZonedTime(new Date(), torontoTimezone);
-      return format(zonedDate, 'yyyy-MM-dd', { timeZone: torontoTimezone });
-    },
+    // Switch between Expense and Income tabs | 지출 및 수입 탭 전환
     setType(newType) {
       this.type = newType;
       this.entry.amount = 0;
-      this.entry.category = '';
+      this.entry.category = "";
     },
-    selectCategory(category) {
-      this.entry.category = category;
-      this.addingCustomCategory = false;
+    // Select a category | 카테고리 선택
+    selectCategory(categoryName) {
+      this.entry.category = categoryName; // Set selected category | 선택된 카테고리 설정
     },
-    addCustomCategory() {
-      if (this.newCategory) {
-        const categoryList = this.type === 'expense' ? this.expenseCategories : this.incomeCategories;
-        if (!categoryList.some(cat => cat.name === this.newCategory)) {
-          categoryList.push({ name: this.newCategory, icon: 'fas fa-tag' });
-          this.entry.category = this.newCategory;
-        }
-        this.newCategory = '';
-        this.addingCustomCategory = false;
-      }
-    },
-    cancelCustomCategory() {
-      this.addingCustomCategory = false;
-      this.newCategory = '';
-    },
-    addOrUpdateEntry() {
+    // Add or update an entry | 항목 추가 또는 업데이트
+    async addOrUpdateEntry() {
       if (!this.entry.date || !this.entry.amount || !this.entry.category) {
-        alert("Please complete all required fields.");
+        alert("Please complete all required fields. | 모든 필드를 채워주세요.");
         return;
       }
 
-      const savedEntries = JSON.parse(localStorage.getItem('entries')) || [];
-      if (this.isEditing) {
-        // Update existing entry
-        const index = savedEntries.findIndex(e => e.id === this.entry.id);
-        if (index !== -1) savedEntries.splice(index, 1, this.entry);
-      } else {
-        // Add new entry
-        this.entry.id = Date.now();
-        savedEntries.push({ ...this.entry, type: this.type });
-      }
-      localStorage.setItem('entries', JSON.stringify(savedEntries));
-      this.$emit('updateList'); // Notify parent to refresh the list
-      this.resetForm();
+      const db = await setupDatabase();
+      this.entry.id = Date.now(); // Generate unique ID | 고유 ID 생성
+      await addExpense(db, { ...this.entry, type: this.type }); // Save entry to IndexedDB | 항목을 IndexedDB에 저장
+      this.expenses.push({ ...this.entry }); // Update UI | UI 업데이트
+      this.resetForm(); // Reset the form | 입력 필드 초기화
     },
+    // Reset the form | 입력 필드 초기화
     resetForm() {
       this.isEditing = false;
       this.entry = {
         id: null,
-        date: this.getTodayDate(),
-        note: '',
+        date: new Date().toISOString().split("T")[0],
+        note: "",
         amount: 0,
-        category: '',
+        category: "",
       };
     },
-  }
+  },
 };
 </script>
 
 <style scoped>
-.input-form {
-  max-width: 600px;
-  margin: auto;
-  font-family: Arial, sans-serif;
-}
-
-.tabs {
-  display: flex;
-  margin-bottom: 20px;
-}
-
-.tabs button {
-  flex: 1;
-  padding: 10px;
-  cursor: pointer;
-  background-color: #f0f0f0;
-  border: none;
-  outline: none;
-  font-size: 1em;
-  transition: background-color 0.3s;
-  border-radius: 5px 5px 0 0;
-}
-
-.tabs .active {
-  background-color: #ffa500;
-  color: white;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-.category-section {
-  margin-top: 20px;
-}
-
+/* Grid layout for categories | 카테고리를 위한 그리드 레이아웃 */
 .category-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 
+/* Style for individual categories | 각 카테고리의 스타일 */
 .category {
-  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   cursor: pointer;
-  text-align: center;
-  background-color: #f9f9f9;
-  border-radius: 5px;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.3s;
+  padding: 10px;
+  border: 2px solid transparent; /* 기본 테두리 */
+  border-radius: 8px;
 }
 
 .category.selected {
-  background-color: #ffa500;
-  color: white;
+  border-color: #ffa500; /* Highlight selected category | 선택된 카테고리 강조 */
+  background-color: #fff8e1; /* 선택된 배경색 */
+  color: black;
 }
 
-.custom-category-input {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
+.category:hover {
+  border-color: #ccc; /* Hover border color | 호버 시 테두리 색상 */
 }
 
-.submit-button {
-  background-color: #ff7f50;
-  color: white;
-  border: none;
-  border-radius: 20px;
-  padding: 15px;
-  font-size: 1.2em;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  width: 100%;
-  margin-top: 20px;
-}
-
-.submit-button:hover {
-  background-color: #ff6347;
-}
-
-button {
-  padding: 5px 10px;
-  cursor: pointer;
+.category i {
+  font-size: 24px; /* Icon size | 아이콘 크기 */
+  margin-bottom: 5px;
 }
 </style>
