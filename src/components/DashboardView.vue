@@ -193,6 +193,7 @@ export default {
           color: '#333',
           font: {
             weight: 'bold',
+            size: 15, // Increase the font size of the data labels
           },
         },
       },
@@ -216,6 +217,7 @@ export default {
           color: '#333',
           font: {
             weight: 'bold',
+            size: 15, // Increase the font size of the data labels
           },
         },
       },
