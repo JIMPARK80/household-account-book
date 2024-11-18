@@ -13,7 +13,7 @@
       <!-- Monthly Money Flow Graph -->
       <div v-if="currentGraph === 1">
         <h2>Monthly Money Flow</h2>
-        <div v-if="monthlySummary.expenses.length && monthlySummary.income.length">
+        <div v-if="hasMonthlyData">
           <Bar :data="moneyFlowChartData" :options="chartOptions" />
         </div>
         <p v-else>No data available for money flow comparison.</p>
@@ -22,8 +22,8 @@
       <!-- Monthly Expense Summary Graph -->
       <div v-if="currentGraph === 2">
         <h2>Monthly Expense Summary</h2>
-        <div v-if="monthlySummary.expenses && monthlySummary.expenses.length">
-          <Pie :data="expenseChartData" :options="pieChartOptions"/>
+        <div v-if="monthlySummary.expenses.length">
+          <Pie :data="expenseChartData" :options="pieChartOptions" />
         </div>
         <p v-else>No expense data available for summary.</p>
       </div>
@@ -31,7 +31,7 @@
       <!-- Monthly Income Summary Graph -->
       <div v-if="currentGraph === 3">
         <h2>Monthly Income Summary</h2>
-        <div v-if="monthlySummary.income && monthlySummary.income.length">
+        <div v-if="monthlySummary.income.length">
           <Pie :data="incomeChartData" :options="pieChartOptions" />
         </div>
         <p v-else>No income data available for summary.</p>
@@ -41,22 +41,29 @@
 </template>
 
 <script>
-import { setupDatabase, getAllExpenses, getAllIncome } from '../database.js';
-import { ref, onMounted, computed } from 'vue';
-import { Pie, Bar } from 'vue-chartjs';
-import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement, CategoryScale, BarElement, LinearScale } from 'chart.js';
-import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { setupDatabase, getAllExpenses, getAllIncome } from "../database.js";
+import { ref, onMounted, computed } from "vue";
+import { Pie, Bar } from "vue-chartjs";
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  CategoryScale,
+  BarElement,
+  LinearScale,
+} from "chart.js";
 
-// Register Chart.js components
-ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale, BarElement, LinearScale, ChartDataLabels);
+ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale, BarElement, LinearScale);
 
 export default {
-  name: 'DashboardView',
+  name: "DashboardView",
   components: { Pie, Bar },
   setup() {
     const expenses = ref([]);
     const income = ref([]);
-    const currentGraph = ref(1); // Default: Show the first graph (Monthly Money Flow)
+    const currentGraph = ref(1);
 
     // Compute monthly summary for both expenses and income
     const monthlySummary = computed(() => {
@@ -64,329 +71,212 @@ export default {
       const incomeSummary = {};
 
       expenses.value.forEach((expense) => {
-        if (expenseSummary[expense.category]) {
-          expenseSummary[expense.category] += expense.amount;
-        } else {
-          expenseSummary[expense.category] = expense.amount;
-        }
+        expenseSummary[expense.category] = (expenseSummary[expense.category] || 0) + expense.amount;
       });
 
       income.value.forEach((inc) => {
-        if (incomeSummary[inc.category]) {
-          incomeSummary[inc.category] += inc.amount;
-        } else {
-          incomeSummary[inc.category] = inc.amount;
-        }
+        incomeSummary[inc.category] = (incomeSummary[inc.category] || 0) + inc.amount;
       });
 
       return {
-        expenses: Object.keys(expenseSummary).map((category) => ({
-          category,
-          amount: expenseSummary[category],
-        })),
-        income: Object.keys(incomeSummary).map((category) => ({
-          category,
-          amount: incomeSummary[category],
-        })),
+        expenses: Object.entries(expenseSummary).map(([category, amount]) => ({ category, amount })),
+        income: Object.entries(incomeSummary).map(([category, amount]) => ({ category, amount })),
       };
     });
 
-    // Pie chart data for expenses
-    const expenseChartData = computed(() => ({
-      labels: monthlySummary.value.expenses.map((item) => item.category),
-      datasets: [
-        {
-          label: 'Expenses by Category',
-          data: monthlySummary.value.expenses.map((item) => item.amount),
-          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
-          plugins: {
-            datalabels: {
-              display: true,
-              color: '#fff',
-              formatter: (value) => `${value}`,
-            },
-          },
-        },
-      ],
-    }));
+    const hasMonthlyData = computed(() => expenses.value.length || income.value.length);
 
-    // Pie chart data for income
-    const incomeChartData = computed(() => ({
-      labels: monthlySummary.value.income.map((item) => item.category),
-      datasets: [
-        {
-          label: 'Income by Category',
-          data: monthlySummary.value.income.map((item) => item.amount),
-          backgroundColor: ['#4BC0C0', '#FFCE56'],
-          plugins: {
-            datalabels: {
-              display: true,
-              color: '#fff',
-              formatter: (value) => `${value}`,
-            },
-          },
-        },
-      ],
-    }));
-
-    // Bar chart data for Total Income vs Total Expenditure
+    // Chart Data
     const moneyFlowChartData = computed(() => {
       const totalIncome = income.value.reduce((sum, inc) => sum + inc.amount, 0);
       const totalExpenditure = expenses.value.reduce((sum, exp) => sum + exp.amount, 0);
 
       return {
-        labels: ['Total'],
+        labels: ["Total"],
         datasets: [
           {
-            label: 'Total Income',
+            label: "Total Income (USD)",
             data: [totalIncome],
-            backgroundColor: '#4BC0C0',
-            borderColor: '#36A2EB',
-            borderWidth: 1,
+            backgroundColor: "#4BC0C0",
           },
           {
-            label: 'Total Expenditure',
+            label: "Total Expenditure (USD)",
             data: [totalExpenditure],
-            backgroundColor: '#FF6384',
-            borderColor: '#FFCE56',
-            borderWidth: 1,
+            backgroundColor: "#FF6384",
           },
         ],
       };
     });
 
-    // Chart options for the bar chart
+    const expenseChartData = computed(() => ({
+      labels: monthlySummary.value.expenses.map((item) => item.category),
+      datasets: [
+        {
+          label: "Expenses by Category",
+          data: monthlySummary.value.expenses.map((item) => item.amount),
+          backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"],
+        },
+      ],
+    }));
+
+    const incomeChartData = computed(() => ({
+      labels: monthlySummary.value.income.map((item) => item.category),
+      datasets: [
+        {
+          label: "Income by Category",
+          data: monthlySummary.value.income.map((item) => item.amount),
+          backgroundColor: ["#4BC0C0", "#FFCE56"],
+        },
+      ],
+    }));
+
+    // Chart Options
     const chartOptions = {
       responsive: true,
-      aspectRatio: 1,  // This makes the chart taller by adjusting the aspect ratio (height: width ratio)
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            color: '#333',
+      plugins: {
+        legend: { position: "top", labels: { color: "#333" } },
+        tooltip: {
+          callbacks: {
+            label: (tooltipItem) => `$${tooltipItem.raw} USD`,
           },
-          grid: {
-            color: '#ddd',
-          },
-        },
-        x: {
-          ticks: {
-            color: '#333',
-          },
-          grid: {
-            color: '#ddd',
-          },
+          backgroundColor: "rgba(0, 0, 0, 0.7)",
+          titleColor: "#fff",
+          bodyColor: "#fff",
         },
       },
-      plugins: {
-        legend: {
-          position: 'top',
-          labels: {
-            color: '#333',
-          },
-        },
-        tooltip: {
-          titleColor: '#fff',   // Change the title color to white
-          bodyColor: '#fff',    // Change the body text color to white
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',  // Change the tooltip background to a darker shade
-          borderColor: '#007bff',  // Tooltip border color (can be adjusted)
-          borderWidth: 1,    // Add border width if needed
-        },
-        datalabels: {
-          color: '#333',
-          font: {
-            weight: 'bold',
-            size: 20, // Increase the font size of the data labels
-          },
-        },
+      scales: {
+        y: { beginAtZero: true, ticks: { color: "#333" }, grid: { color: "#ddd" } },
+        x: { ticks: { color: "#333" }, grid: { color: "#ddd" } },
       },
     };
 
     const pieChartOptions = {
       responsive: true,
-      aspectRatio: 1,
       plugins: {
-        legend: {
-          position: 'top',
-          labels: {
-            color: '#333',
-          },
-        },
+        legend: { position: "top", labels: { color: "#333" } },
         tooltip: {
-          titleColor: '#fff',   // Change the title color to white
-          bodyColor: '#fff',    // Change the body text color to white
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',  // Change the tooltip background to a darker shade
-          borderColor: '#007bff',  // Tooltip border color (can be adjusted)
-          borderWidth: 1,    // Add border width if needed
-        },
-        datalabels: {
-          color: '#333',
-          font: {
-            weight: 'bold',
-            size: 20, // Increase the font size of the data labels
+          callbacks: {
+            label: (tooltipItem) => `$${tooltipItem.raw} USD`,
           },
+          backgroundColor: "rgba(0, 0, 0, 0.7)",
+          titleColor: "#fff",
+          bodyColor: "#fff",
         },
       },
     };
 
-    // Fetch expenses and income from the database on component mount
+    // Fetch data
     onMounted(async () => {
       const db = await setupDatabase();
-      const allExpenses = await getAllExpenses(db);
-      const allIncome = await getAllIncome(db);
-
-      // Assign filtered data to respective variables
-      expenses.value = allExpenses.filter((item) => item.type === 'expense');
-      income.value = allIncome.filter((item) => item.type === 'income');
+      expenses.value = await getAllExpenses(db);
+      income.value = await getAllIncome(db);
     });
 
-    // Function to move to the next graph
+    // Graph navigation
     const nextGraph = () => {
-      if (currentGraph.value < 3) {
-        currentGraph.value++;
-      } else {
-        currentGraph.value = 1; // Loop back to the first graph
-      }
+      currentGraph.value = currentGraph.value < 3 ? currentGraph.value + 1 : 1;
     };
 
-    // Function to move to the previous graph
     const previousGraph = () => {
-      if (currentGraph.value > 1) {
-        currentGraph.value--;
-      } else {
-        currentGraph.value = 3; // Loop back to the last graph
-      }
+      currentGraph.value = currentGraph.value > 1 ? currentGraph.value - 1 : 3;
     };
 
     return {
       monthlySummary,
       moneyFlowChartData,
+      expenseChartData,
+      incomeChartData,
       chartOptions,
       pieChartOptions,
       currentGraph,
       nextGraph,
       previousGraph,
-      expenseChartData,
-      incomeChartData,
+      hasMonthlyData,
     };
   },
 };
 </script>
 
 <style scoped>
-/* Dashboard View */
 .dashboard-view {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
   align-items: center;
-  height: 100%;
-  width: 100%;
   padding: 20px;
-  box-sizing: border-box;
   max-width: 100%;
-  margin-top: 20px;
 }
 
-/* Heading Styles for Dashboard */
-.dashboard-view h2, .dashboard-view h3 {
-  margin-bottom: 20px;
-  font-size: 2.8em;
-  font-weight: bold;
-  text-align: center;
-  width: 100%;
-}
-
-/* Chart container to fill available space */
-.chart-container {
-  width: 100%;
-  max-width: 100%;
-  height: 500px;
-  margin-top: 30px;
-}
-
-.chart-container canvas {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-/* Buttons for chart navigation */
 .nav-buttons {
+  margin: 20px 0;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 50px;
-  width: 100%;
+  gap: 10px;
 }
 
-.nav-buttons button {
+.nav-button {
   background-color: #007bff;
   color: white;
+  padding: 10px 20px;
   border: none;
-  padding: 12px 20px;
-  font-size: 18px;
+  border-radius: 5px;
   cursor: pointer;
-  margin: 0 10px;
-  border-radius: 8px;
-  transition: background-color 0.3s;
+  font-size: 16px;
 }
 
-.nav-buttons button:hover {
+.nav-button:hover {
   background-color: #0056b3;
 }
 
-/* Make sure the charts do not overflow */
-.chart-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
+.graphs {
+  width: 100%;
+  max-width: 800px;
 }
 
-/* Responsive Design Adjustments */
-@media (max-width: 1200px) {
-  .dashboard-view {
-    padding: 15px;
-  }
+.graphs h2 {
+  text-align: center;
+  margin-bottom: 10px;
+  font-size: 1.8em;
+}
 
-  .chart-container {
-    height: 400px;
-  }
-
-  .nav-buttons button {
-    padding: 10px 18px;
-  }
-
-  .dashboard-view h2, .dashboard-view h3 {
-    font-size: 2.5em;
-  }
+.graphs p {
+  text-align: center;
+  font-size: 1.2em;
+  color: #666;
 }
 
 @media (max-width: 768px) {
   .dashboard-view {
-    height: auto;
-    padding: 10px;
+    padding: 15px;
   }
 
-  .chart-container {
-    height: 300px;
+  .graphs {
+    max-width: 100%;
   }
 
-  .nav-buttons button {
-    padding: 8px 14px;
+  .nav-button {
+    font-size: 14px;
+    padding: 8px 16px;
   }
 
-  .dashboard-view h2, .dashboard-view h3 {
-    font-size: 2em;
+  .graphs h2 {
+    font-size: 1.5em;
+  }
+
+  .graphs p {
+    font-size: 1em;
   }
 }
 
 @media (max-width: 480px) {
-  .dashboard-view h2, .dashboard-view h3 {
-    font-size: 1.5em;
+  .dashboard-view h1 {
+    font-size: 1.8em;
   }
 
-  .nav-buttons button {
+  .graphs h2 {
+    font-size: 1.2em;
+  }
+
+  .nav-button {
+    font-size: 12px;
     padding: 6px 12px;
   }
 }

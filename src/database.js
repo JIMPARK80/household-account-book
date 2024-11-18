@@ -1,7 +1,7 @@
 // IndexedDB 설정 함수
 export async function setupDatabase() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open("expenseApp", 3); // 데이터베이스 버전 3으로 업데이트
+    const request = indexedDB.open("expenseApp", 4); // 데이터베이스 버전 3으로 업데이트
 
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
@@ -13,12 +13,14 @@ export async function setupDatabase() {
 
       // 지출 저장소가 없으면 생성
       if (!db.objectStoreNames.contains("expenses")) {
-        db.createObjectStore("expenses", { keyPath: "id", autoIncrement: true });
+        const store = db.createObjectStore("expenses", { keyPath: "id", autoIncrement: true });
+        store.createIndex("currency", "currency", { unique: false }); // Add currency index
       }
 
       // 수입 저장소가 없으면 생성
       if (!db.objectStoreNames.contains("income")) {
-        db.createObjectStore("income", { keyPath: "id", autoIncrement: true });
+        const store = db.createObjectStore("income", { keyPath: "id", autoIncrement: true });
+        store.createIndex("currency", "currency", { unique: false }); // Add currency index
       }
     };
 

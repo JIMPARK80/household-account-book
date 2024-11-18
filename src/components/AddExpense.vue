@@ -1,49 +1,59 @@
 <template>
   <div class="dashboard-view">
-    <!-- 수입/지출 요약 -->
-    <h3>Expense & Income </h3>
+    <!-- Expense & Income Summary -->
+    <h3>Expense & Income</h3>
     <div class="income-expense-summary">
-      <!-- 지출 요약 -->
+      <!-- Expense Summary -->
       <div class="expense-summary">
         <span>Expense: </span>
-        <span class="expense">-{{ totalExpense }}$</span> <!-- 지출 금액 표시 -->
+        <span class="expense">-{{ totalExpense }} {{ entry.currency }}</span>
       </div>
-      <!-- 수입 요약 -->
+      <!-- Income Summary -->
       <div class="income-summary">
         <span>Income: </span>
-        <span class="income">+{{ totalIncome }}$</span> <!-- 수입 금액 표시 -->
+        <span class="income">+{{ totalIncome }} {{ entry.currency }}</span>
       </div>
-      <!-- 총 잔액 -->
+      <!-- Total Balance -->
       <div class="total-summary">
         <span>Total Balance</span>
-        <span class="total">{{ total }}$</span> <!-- 잔액 표시 -->
+        <span class="total">{{ total }} {{ entry.currency }}</span>
       </div>
     </div>
 
-    <!-- 입력 폼 -->
+    <!-- Input Form -->
     <div class="input-form">
-      <!-- 지출과 수입 탭 선택 -->
+      <!-- Tabs for Expense and Income -->
       <div class="tabs">
-        <button @click="setType('expense')" :class="{ active: type === 'expense' }">Expense</button> <!-- 지출 탭 -->
-        <button @click="setType('income')" :class="{ active: type === 'income' }">Income</button> <!-- 수입 탭 -->
+        <button @click="setType('expense')" :class="{ active: type === 'expense' }">Expense</button>
+        <button @click="setType('income')" :class="{ active: type === 'income' }">Income</button>
       </div>
 
-      <!-- 입력 폼 -->
+      <!-- Form -->
       <form @submit.prevent="addOrUpdateEntry">
         <div class="form-group">
           <label>Date:</label>
-          <input v-model="entry.date" type="date" required /> <!-- 날짜 입력 -->
+          <input v-model="entry.date" type="date" required />
         </div>
         <div class="form-group">
           <label>Note:</label>
-          <input v-model="entry.note" type="text" placeholder="Enter value" /> <!-- 메모 입력 -->
+          <input v-model="entry.note" type="text" placeholder="Enter value" />
         </div>
         <div class="form-group">
           <label>{{ type === 'expense' ? 'Expense' : 'Income' }}:</label>
-          <input v-model="entry.amount" type="number" placeholder="0.00" required /> <!-- 금액 입력 -->
+          <input v-model="entry.amount" type="number" placeholder="0.00" required />
+        </div>
+        <div class="form-group">
+          <label>Currency:</label>
+          <select v-model="entry.currency" required>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="JPY">JPY</option>
+            <option value="INR">INR</option>
+            <option value="GBP">GBP</option>
+          </select>
         </div>
 
-        <!-- 카테고리 선택 -->
+        <!-- Categories -->
         <div class="category-section">
           <h3>Category</h3>
           <div class="category-grid">
@@ -54,27 +64,26 @@
               class="category"
               @click="selectCategory(category.name)"
             >
-              <i :class="category.icon"></i> <!-- 카테고리 아이콘 -->
-              <span>{{ category.name }}</span> <!-- 카테고리 이름 -->
+              <i :class="category.icon"></i>
+              <span>{{ category.name }}</span>
             </div>
           </div>
         </div>
 
-        <!-- 제출 버튼 -->
-        <button type="submit" class="submit-button">{{ isEditing ? 'Update' : 'Submit' }}</button> <!-- 제출 또는 수정 -->
+        <!-- Submit Button -->
+        <button type="submit" class="submit-button">{{ isEditing ? 'Update' : 'Submit' }}</button>
       </form>
 
-      <!-- 입력된 값 리스트 -->
+      <!-- Entered Values List -->
       <div class="expense-list">
         <h3>Entered Values</h3>
         <ul>
           <li v-for="expense in currentEntries" :key="expense.id">
-            <strong>{{ expense.date }}</strong>: {{ expense.note }} -
-            {{ type === 'expense' ? 'Expense' : 'Income' }}: {{ expense.amount }}
+            <strong>{{ expense.date }}</strong>: {{ expense.note }} - 
+            {{ type === 'expense' ? 'Expense' : 'Income' }}: 
+            {{ expense.amount }} {{ expense.currency }}
             <em>({{ expense.category }})</em>
-            <!-- 수정 버튼 -->
             <button @click="editEntry(expense)">Edit</button>
-            <!-- 삭제 버튼 -->
             <button @click="deleteEntry(expense.id)">Delete</button>
           </li>
         </ul>
@@ -87,123 +96,133 @@
 import { setupDatabase, addExpense, getAllExpenses, addIncome, getAllIncome } from "../database.js";
 
 export default {
- data() {
-   return {
-     isEditing: false, // 항목 수정 여부
-     type: "expense", // 기본 탭은 '지출'
-     entry: { // 입력된 항목 데이터
-       id: null,
-       date: new Date().toISOString().split("T")[0], // 현재 날짜
-       note: "", // 메모
-       amount: 0, // 금액
-       category: "", // 카테고리
-     },
-     expenses: [], // 지출 목록
-     income: [], // 수입 목록
-     expenseCategories: [ // 지출 카테고리 목록
-       { name: "Food", icon: "fas fa-utensils" },
-       { name: "Houseware", icon: "fas fa-home" },
-       { name: "Clothes", icon: "fas fa-tshirt" },
-       { name: "Cosmetic", icon: "fas fa-paint-brush" },
-       { name: "Medical", icon: "fas fa-heartbeat" },
-       { name: "Education", icon: "fas fa-book" },
-       { name: "Electric bill", icon: "fas fa-lightbulb" },
-       { name: "Transportation", icon: "fas fa-bus" },
-       { name: "Contact fee", icon: "fas fa-phone" },
-       { name: "Housing expenses", icon: "fas fa-home" },
-     ],
-     incomeCategories: [ // 수입 카테고리 목록
-       { name: "Salary", icon: "fas fa-wallet" },
-       { name: "Pocket money", icon: "fas fa-piggy-bank" },
-       { name: "Bonus", icon: "fas fa-gift" },
-       { name: "Side job", icon: "fas fa-money-bill-alt" },
-       { name: "Investment", icon: "fas fa-coins" },
-       { name: "Extra", icon: "fas fa-hand-holding-usd" },
-     ],
-   };
- },
- async mounted() {
-   const db = await setupDatabase();
-   this.expenses = await getAllExpenses(db); // 저장된 지출 항목 불러오기
-   this.income = await getAllIncome(db); // 저장된 수입 항목 불러오기
- },
- computed: {
-   totalExpense() {
-     return this.expenses.reduce((total, expense) => total + expense.amount, 0); // 총 지출 계산
-   },
-   totalIncome() {
-     return this.income.reduce((total, income) => total + income.amount, 0); // 총 수입 계산
-   },
-   total() {
-     return this.totalIncome - this.totalExpense; // 총 잔액 계산
-   },
-   currentCategories() {
-     return this.type === "expense" ? this.expenseCategories : this.incomeCategories; // 현재 선택된 탭에 따른 카테고리 목록
-   },
-   currentEntries() {
-     return this.type === "expense" ? this.expenses : this.income; // 현재 선택된 탭에 따른 항목 목록
-   },
- },
- methods: {
-   setType(newType) {
-     this.type = newType; // 탭 변경
-     this.entry.amount = 0; // 금액 초기화
-     this.entry.category = ""; // 카테고리 초기화
-   },
-   selectCategory(categoryName) {
-     this.entry.category = categoryName; // 카테고리 선택
-   },
-   async addOrUpdateEntry() {
-     if (!this.entry.date || !this.entry.amount || !this.entry.category) {
-       alert("Please complete all required fields."); // 필수 입력 항목이 비어있으면 경고
-       return;
-     }
-     const db = await setupDatabase();
-     if (this.isEditing) {
-       const index = this.expenses.findIndex((expense) => expense.id === this.entry.id); // 수정 중인 항목 찾기
-       if (index !== -1) {
-         this.expenses.splice(index, 1, { ...this.entry }); // 기존 항목 업데이트
-       }
-       const transaction = db.transaction(this.type === "expense" ? "expenses" : "income", "readwrite");
-       const store = transaction.objectStore(this.type === "expense" ? "expenses" : "income");
-       await store.put({ ...this.entry }); // IndexedDB에 저장
-     } else {
-       this.entry.id = Date.now(); // 고유 ID 생성
-       if (this.type === "expense") {
-         await addExpense(db, { ...this.entry, type: this.type }); // 지출 항목 추가
-         this.expenses.push({ ...this.entry });
-       } else {
-         await addIncome(db, { ...this.entry, type: this.type }); // 수입 항목 추가
-         this.income.push({ ...this.entry });
-       }
-     }
-     this.resetForm(); // 폼 초기화
-   },
-   resetForm() {
-     this.isEditing = false;
-     this.entry = { id: null, date: new Date().toISOString().split("T")[0], note: "", amount: 0, category: "" }; // 입력 폼 초기화
-   },
-   editEntry(entry) {
-     this.isEditing = true; // 수정 모드로 전환
-     this.entry = { ...entry }; // 선택한 항목을 폼에 로드
-     this.type = entry.type; // 항목의 타입 설정
-   },
-   async deleteEntry(id) {
-     if (!confirm("Are you sure you want to delete this entry?")) {
-       return; // 삭제 확인
-     }
-     const index = this.expenses.findIndex((expense) => expense.id === id); // 삭제할 항목 찾기
-     if (index !== -1) {
-       this.expenses.splice(index, 1); // 로컬 상태에서 삭제
-     }
-     const db = await setupDatabase();
-     const transaction = db.transaction(this.type === "expense" ? "expenses" : "income", "readwrite");
-     const store = transaction.objectStore(this.type === "expense" ? "expenses" : "income");
-     await store.delete(id); // IndexedDB에서 삭제
-   },
- },
+  data() {
+    return {
+      isEditing: false,
+      type: "expense",
+      entry: {
+        id: null,
+        date: new Date().toISOString().split("T")[0],
+        note: "",
+        amount: 0,
+        category: "",
+        currency: "USD", // Default currency
+      },
+      expenses: [],
+      income: [],
+      expenseCategories: [
+        { name: "Food", icon: "fas fa-utensils" },
+        { name: "Houseware", icon: "fas fa-home" },
+        { name: "Clothes", icon: "fas fa-tshirt" },
+        { name: "Cosmetic", icon: "fas fa-paint-brush" },
+        { name: "Medical", icon: "fas fa-heartbeat" },
+        { name: "Education", icon: "fas fa-book" },
+        { name: "Electric bill", icon: "fas fa-lightbulb" },
+        { name: "Transportation", icon: "fas fa-bus" },
+        { name: "Contact fee", icon: "fas fa-phone" },
+        { name: "Housing expenses", icon: "fas fa-home" },
+      ],
+      incomeCategories: [
+        { name: "Salary", icon: "fas fa-wallet" },
+        { name: "Pocket money", icon: "fas fa-piggy-bank" },
+        { name: "Bonus", icon: "fas fa-gift" },
+        { name: "Side job", icon: "fas fa-money-bill-alt" },
+        { name: "Investment", icon: "fas fa-coins" },
+        { name: "Extra", icon: "fas fa-hand-holding-usd" },
+      ],
+    };
+  },
+  async mounted() {
+    const db = await setupDatabase();
+    this.expenses = await getAllExpenses(db);
+    this.income = await getAllIncome(db);
+  },
+  computed: {
+    totalExpense() {
+      return this.expenses.reduce((total, expense) => total + expense.amount, 0);
+    },
+    totalIncome() {
+      return this.income.reduce((total, income) => total + income.amount, 0);
+    },
+    total() {
+      return this.totalIncome - this.totalExpense;
+    },
+    currentCategories() {
+      return this.type === "expense" ? this.expenseCategories : this.incomeCategories;
+    },
+    currentEntries() {
+      return this.type === "expense" ? this.expenses : this.income;
+    },
+  },
+  methods: {
+    setType(newType) {
+      this.type = newType;
+      this.entry.amount = 0;
+      this.entry.category = "";
+    },
+    selectCategory(categoryName) {
+      this.entry.category = categoryName;
+    },
+    async addOrUpdateEntry() {
+      if (!this.entry.date || !this.entry.amount || !this.entry.category || !this.entry.currency) {
+        alert("Please complete all required fields.");
+        return;
+      }
+      const db = await setupDatabase();
+      if (this.isEditing) {
+        const transaction = db.transaction(this.type === "expense" ? "expenses" : "income", "readwrite");
+        const store = transaction.objectStore(this.type === "expense" ? "expenses" : "income");
+        await store.put({ ...this.entry });
+      } else {
+        this.entry.id = Date.now();
+        if (this.type === "expense") {
+          await addExpense(db, { ...this.entry });
+          this.expenses.push({ ...this.entry });
+        } else {
+          await addIncome(db, { ...this.entry });
+          this.income.push({ ...this.entry });
+        }
+      }
+      this.resetForm();
+    },
+    resetForm() {
+      this.isEditing = false;
+      this.entry = {
+        id: null,
+        date: new Date().toISOString().split("T")[0],
+        note: "",
+        amount: 0,
+        category: "",
+        currency: "USD",
+      };
+    },
+    editEntry(entry) {
+      this.isEditing = true;
+      this.entry = { ...entry };
+      this.type = entry.type;
+    },
+    async deleteEntry(id) {
+      if (!confirm("Are you sure you want to delete this entry?")) return;
+
+      const db = await setupDatabase();
+      const transaction = db.transaction(this.type === "expense" ? "expenses" : "income", "readwrite");
+      const store = transaction.objectStore(this.type === "expense" ? "expenses" : "income");
+      await store.delete(id);
+
+      if (this.type === "expense") {
+        this.expenses = this.expenses.filter((item) => item.id !== id);
+      } else {
+        this.income = this.income.filter((item) => item.id !== id);
+      }
+    },
+  },
 };
 </script>
+
+<style scoped>
+/* Add any required styling adjustments if necessary */
+</style>
+
 
 <style>
 /* 전반적인 레이아웃 */
