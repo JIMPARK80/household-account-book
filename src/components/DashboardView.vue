@@ -186,14 +186,17 @@ export default {
           },
         },
         tooltip: {
-          titleColor: '#333',
-          bodyColor: '#333',
+          titleColor: '#fff',   // Change the title color to white
+          bodyColor: '#fff',    // Change the body text color to white
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',  // Change the tooltip background to a darker shade
+          borderColor: '#007bff',  // Tooltip border color (can be adjusted)
+          borderWidth: 1,    // Add border width if needed
         },
         datalabels: {
           color: '#333',
           font: {
             weight: 'bold',
-            size: 15, // Increase the font size of the data labels
+            size: 20, // Increase the font size of the data labels
           },
         },
       },
@@ -210,14 +213,17 @@ export default {
           },
         },
         tooltip: {
-          titleColor: '#333',
-          bodyColor: '#333',
+          titleColor: '#fff',   // Change the title color to white
+          bodyColor: '#fff',    // Change the body text color to white
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',  // Change the tooltip background to a darker shade
+          borderColor: '#007bff',  // Tooltip border color (can be adjusted)
+          borderWidth: 1,    // Add border width if needed
         },
         datalabels: {
           color: '#333',
           font: {
             weight: 'bold',
-            size: 15, // Increase the font size of the data labels
+            size: 20, // Increase the font size of the data labels
           },
         },
       },
