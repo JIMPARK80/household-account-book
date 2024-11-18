@@ -15,7 +15,7 @@
       </div>
       <!-- Total Balance -->
       <div class="total-summary">
-        <span>Total Balance</span>
+        <span>Total Balance: </span>
         <span class="total">{{ total }} {{ entry.currency }}</span>
       </div>
     </div>
@@ -45,10 +45,11 @@
         <div class="form-group">
           <label>Currency:</label>
           <select v-model="entry.currency" required>
+            <option value="CAD">CAD</option>
             <option value="USD">USD</option>
             <option value="EUR">EUR</option>
             <option value="JPY">JPY</option>
-            <option value="INR">INR</option>
+            <option value="KRW">KRW</option>
             <option value="GBP">GBP</option>
           </select>
         </div>
@@ -106,7 +107,7 @@ export default {
         note: "",
         amount: 0,
         category: "",
-        currency: "USD", // Default currency
+        currency: "CAD", // Default currency
       },
       expenses: [],
       income: [],
@@ -193,7 +194,7 @@ export default {
         note: "",
         amount: 0,
         category: "",
-        currency: "USD",
+        currency: "CAD",
       };
     },
     editEntry(entry) {
@@ -219,26 +220,22 @@ export default {
 };
 </script>
 
+
 <style scoped>
-/* Add any required styling adjustments if necessary */
-</style>
-
-
-<style>
-/* 전반적인 레이아웃 */
+/* Overall Layout */
 .dashboard-view {
-  font-family: 'Arial', sans-serif;  /* Use a simple, clean font */
+  font-family: 'Arial', sans-serif;
   margin: 20px auto;
   max-width: 800px;
   padding: 20px;
-  background-color: #f4f4f9;  /* Soft background */
+  background-color: #f4f4f9; /* Soft background */
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  color: #333;  /* Default text color */
-  line-height: 1.6;  /* Adjust line height for better spacing */
+  color: #333;
+  line-height: 1.6; /* Spacing adjustment for readability */
 }
 
-/* 수입 및 지출 요약 섹션 */
+/* Income & Expense Summary */
 .income-expense-summary {
   display: flex;
   justify-content: space-between;
@@ -247,13 +244,6 @@ export default {
   background-color: #ffffff;
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-/* 지출, 수입, 총 요약 */
-.expense-summary, .income-summary, .total-summary {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
 .expense-summary {
@@ -277,136 +267,151 @@ export default {
   color: green;
 }
 
-/* 탭 버튼 */
+/* Tabs */
 .tabs {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   margin-bottom: 20px;
 }
 
 .tabs button {
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
+  background-color: #ffffff;
+  border: 2px solid #ffa726; /* Accent border */
+  color: #ffa726;
   padding: 10px 20px;
-  font-size: 16px;
+  font-size: 25px;
+  border-radius: 25px; /* Rounded corners */
   cursor: pointer;
-  border-radius: 5px;
+  font-weight: bold;
   transition: all 0.3s ease;
-  width: 48%;
 }
 
 .tabs button.active {
-  background-color: #007bff;
+  background-color: #ffa726; /* Highlight active tab */
   color: white;
 }
 
 .tabs button:hover {
-  background-color: #e1e1e1;
+  background-color: #ffcc80;
 }
 
-/* 입력 폼 스타일 */
+/* Form Styling */
+.input-form {
+  margin-top: 0px;
+}
+
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 0px;
 }
 
 .form-group label {
   display: block;
-  font-size: 16px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
   margin-bottom: 5px;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
   width: 100%;
   padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  margin-bottom: 10px;
+  font-size: 14px;
+  border: 2px solid #ddd;
+  border-radius: 10px; /* Rounded corners */
+  background-color: #fff8e1; /* Light yellow */
+  box-sizing: border-box;
   transition: border-color 0.3s ease;
 }
 
-.form-group input:focus {
-  border-color: #007bff;
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #ffa726;
   outline: none;
 }
 
-/* 카테고리 섹션 */
-.category-section {
-  margin-top: 50px;
+/* Expense/Income Input Section */
+.expense-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
+.currency-symbol {
+  margin-left: 10px;
+  font-size: 16px;
+  color: #555;
+}
+
+/* Category Section */
 .category-section h3 {
-  font-size: 20px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
   margin-bottom: 10px;
-  text-align: center;
-  font-weight: bold; /* Stronger heading */
-  color: #333; /* Darker text color */
 }
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(5, 1fr); /* 3 columns */
+  gap: 5px;
 }
 
 .category {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   padding: 10px;
-  border: 1px solid rgba(131, 131, 131, 0.938); /* Black border added */
-  border-radius: 5px;
+  border: 2px solid #ddd;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .category:hover {
-  background-color: #f0f8ff;
+  background-color: #ffa726; /* Hover effect */
+  color: white;
 }
 
 .category.selected {
-  background-color: #e6f7ff;
-  border-color: #007bff;
+  background-color: #ffa726;
+  color: white;
 }
 
 .category i {
-  font-size: 30px;
-  margin-bottom: 10px;
+  font-size: 24px;
+  margin-bottom: 5px;
 }
 
-.category span {
+/* Submit Button */
+.submit-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #ffa726;
+  color: white;
   font-size: 16px;
   font-weight: bold;
-  color: #333; /* Ensure the text inside the category is easily readable */
-}
-
-/* 제출 버튼 */
-.submit-button {
-  margin-top: 30px;
-  background-color: #007bff;
-  color: white;
-  padding: 12px 20px;
-  font-size: 16px;
-  width: 100%;
   border: none;
-  border-radius: 8px;
+  border-radius: 25px; /* Rounded button */
   cursor: pointer;
   transition: background-color 0.3s ease;
+  margin-top: 20px;
 }
 
 .submit-button:hover {
-  background-color: #0056b3;
+  background-color: #ff9800;
 }
 
-/* 입력된 값 리스트 */
+/* Entered Values List */
 .expense-list {
-  margin-top: 50px;
+  margin-top: 40px;
 }
 
 .expense-list h3 {
   font-size: 18px;
-  margin-bottom: 10px;
   text-align: center;
+  margin-bottom: 10px;
 }
 
 .expense-list ul {
@@ -449,19 +454,22 @@ export default {
   background-color: #e53935;
 }
 
-/* 반응형 디자인 */
+/* Responsive Design */
 @media (max-width: 768px) {
   .category-grid {
-    grid-template-columns: repeat(2, 1fr); /* 작은 화면에서 카테고리 그리드를 두 열로 변경 */
+    grid-template-columns: repeat(2, 1fr); /* Adjust to 2 columns for smaller screens */
   }
 
-  .expense-summary, .income-summary, .total-summary {
+  .expense-summary,
+  .income-summary,
+  .total-summary {
     margin-bottom: 15px;
   }
 
   .tabs button {
     width: 100%;
-    margin-bottom: 10px; /* 버튼을 전체 너비로 설정 */
+    margin-bottom: 10px;
   }
 }
 </style>
+

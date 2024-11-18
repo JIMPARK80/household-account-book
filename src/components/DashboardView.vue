@@ -95,12 +95,12 @@ export default {
         labels: ["Total"],
         datasets: [
           {
-            label: "Total Income (USD)",
+            label: "Total Income (CAD)",
             data: [totalIncome],
             backgroundColor: "#4BC0C0",
           },
           {
-            label: "Total Expenditure (USD)",
+            label: "Total Expenditure (CAD)",
             data: [totalExpenditure],
             backgroundColor: "#FF6384",
           },
@@ -137,7 +137,7 @@ export default {
         legend: { position: "top", labels: { color: "#333" } },
         tooltip: {
           callbacks: {
-            label: (tooltipItem) => `$${tooltipItem.raw} USD`,
+            label: (tooltipItem) => `$${tooltipItem.raw} CAD`,
           },
           backgroundColor: "rgba(0, 0, 0, 0.7)",
           titleColor: "#fff",
@@ -156,7 +156,7 @@ export default {
         legend: { position: "top", labels: { color: "#333" } },
         tooltip: {
           callbacks: {
-            label: (tooltipItem) => `$${tooltipItem.raw} USD`,
+            label: (tooltipItem) => `$${tooltipItem.raw} CAD`,
           },
           backgroundColor: "rgba(0, 0, 0, 0.7)",
           titleColor: "#fff",
