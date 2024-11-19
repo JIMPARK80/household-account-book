@@ -54,8 +54,8 @@ import {
   BarElement,
   LinearScale,
 } from "chart.js";
-
-ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale, BarElement, LinearScale);
+import ChartDataLabels from "chartjs-plugin-datalabels";
+ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale, BarElement, LinearScale, ChartDataLabels);
 
 export default {
   name: "DashboardView",
@@ -153,18 +153,37 @@ export default {
     const pieChartOptions = {
       responsive: true,
       plugins: {
-        legend: { position: "top", labels: { color: "#333" } },
+        legend: {
+          position: "top",
+          labels: {
+            color: "#333",
+          },
+        },
         tooltip: {
           callbacks: {
-            label: (tooltipItem) => `$${tooltipItem.raw} CAD`,
+            label: (tooltipItem) => {
+              const dataset = tooltipItem.dataset.data;
+              const currentValue = dataset[tooltipItem.dataIndex];
+              const total = dataset.reduce((sum, value) => sum + value, 0);
+              const percentage = ((currentValue / total) * 100).toFixed(2); // Calculate percentage
+              return `${tooltipItem.label}: $${currentValue} CAD (${percentage}%)`;
+            },
           },
           backgroundColor: "rgba(0, 0, 0, 0.7)",
           titleColor: "#fff",
           bodyColor: "#fff",
         },
+        datalabels: {
+          color: "#fff",
+          formatter: (value, context) => {
+            const dataset = context.chart.data.datasets[0].data;
+            const total = dataset.reduce((sum, val) => sum + val, 0);
+            const percentage = ((value / total) * 100).toFixed(1);
+            return `${percentage}%`; // Display percentage on the graph
+          },
+        },
       },
     };
-
     // Fetch data
     onMounted(async () => {
       const db = await setupDatabase();
