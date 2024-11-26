@@ -5,10 +5,27 @@
 npm install
 ```
 
+
+### Install for Vue CLI : 
+
+```
+npm install -g @vue/cli
+```
+
+### Install for Vue CLI : 
+
+```
+npm install vue-router vuex
+```
+
+
+
 ### Compiles and hot-reloads for development
 ```
 npm run serve
 ```
+
+
 
 ### Compiles and minifies for production
 ```
