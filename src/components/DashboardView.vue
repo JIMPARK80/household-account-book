@@ -174,7 +174,7 @@ export default {
           bodyColor: "#fff",
         },
         datalabels: {
-          color: "#fff",
+          color: "#000000",
           formatter: (value, context) => {
             const dataset = context.chart.data.datasets[0].data;
             const total = dataset.reduce((sum, val) => sum + val, 0);
