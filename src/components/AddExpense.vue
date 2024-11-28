@@ -228,43 +228,45 @@ export default {
   margin: 20px auto;
   max-width: 800px;
   padding: 20px;
-  background-color: #f4f4f9; /* Soft background */
+  background-color: #f9f9f9; /* Softer background */
   border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); /* Softer shadow */
   color: #333;
-  line-height: 1.6; /* Spacing adjustment for readability */
+  line-height: 1.6;
 }
 
 /* Income & Expense Summary */
 .income-expense-summary {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column; /* Stack items vertically for mobile */
+  align-items: center;
+  gap: 10px;
   margin-bottom: 20px;
   padding: 15px;
   background-color: #ffffff;
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
-.expense-summary {
-  color: red;
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.income-summary {
-  color: blue;
-  font-size: 20px;
-  font-weight: bold;
-}
-
+.expense-summary,
+.income-summary,
 .total-summary {
+  font-size: 18px;
   font-weight: bold;
-  font-size: 24px;
+  text-align: center;
+}
+
+.expense-summary span {
+  color: #e53935; /* Red for expenses */
+}
+
+.income-summary span {
+  color: #1e88e5; /* Blue for income */
 }
 
 .total-summary .total {
-  color: green;
+  color: #43a047; /* Green for total balance */
+  font-size: 24px; /* Emphasize total */
 }
 
 /* Tabs */
@@ -272,41 +274,43 @@ export default {
   display: flex;
   justify-content: center;
   margin-bottom: 20px;
+  gap: 10px; /* Space between buttons */
 }
 
 .tabs button {
   background-color: #ffffff;
-  border: 2px solid #ffa726; /* Accent border */
+  border: 2px solid #ffa726;
   color: #ffa726;
   padding: 10px 20px;
-  font-size: 25px;
-  border-radius: 25px; /* Rounded corners */
+  font-size: 18px;
+  border-radius: 25px;
   cursor: pointer;
   font-weight: bold;
   transition: all 0.3s ease;
+  width: 45%; /* Make buttons responsive */
 }
 
 .tabs button.active {
-  background-color: #ffa726; /* Highlight active tab */
+  background-color: #ffa726;
   color: white;
 }
 
 .tabs button:hover {
-  background-color: #ffcc80;
+  background-color: #ffd54f;
 }
 
 /* Form Styling */
 .input-form {
-  margin-top: 0px;
+  margin-top: 20px;
 }
 
 .form-group {
-  margin-bottom: 0px;
+  margin-bottom: 20px;
 }
 
 .form-group label {
   display: block;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: bold;
   color: #333;
   margin-bottom: 5px;
@@ -316,10 +320,10 @@ export default {
 .form-group select {
   width: 100%;
   padding: 10px;
-  font-size: 14px;
+  font-size: 16px;
   border: 2px solid #ddd;
-  border-radius: 10px; /* Rounded corners */
-  background-color: #fff8e1; /* Light yellow */
+  border-radius: 10px;
+  background-color: #fff8e1;
   box-sizing: border-box;
   transition: border-color 0.3s ease;
 }
@@ -330,31 +334,19 @@ export default {
   outline: none;
 }
 
-/* Expense/Income Input Section */
-.expense-input {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.currency-symbol {
-  margin-left: 10px;
-  font-size: 16px;
-  color: #555;
-}
-
 /* Category Section */
 .category-section h3 {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   color: #333;
   margin-bottom: 10px;
+  text-align: center;
 }
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr); /* 3 columns */
-  gap: 5px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
 }
 
 .category {
@@ -370,7 +362,7 @@ export default {
 }
 
 .category:hover {
-  background-color: #ffa726; /* Hover effect */
+  background-color: #ffa726;
   color: white;
 }
 
@@ -387,13 +379,13 @@ export default {
 /* Submit Button */
 .submit-button {
   width: 100%;
-  padding: 12px;
+  padding: 15px;
   background-color: #ffa726;
   color: white;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   border: none;
-  border-radius: 25px; /* Rounded button */
+  border-radius: 25px;
   cursor: pointer;
   transition: background-color 0.3s ease;
   margin-top: 20px;
@@ -421,13 +413,12 @@ export default {
 
 .expense-list li {
   background-color: #ffffff;
-  padding: 10px;
+  padding: 15px;
   margin-bottom: 10px;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column; /* Stack content for mobile */
 }
 
 .expense-list li strong {
@@ -440,36 +431,43 @@ export default {
 }
 
 .expense-list button {
-  background-color: #f44336;
+  background-color: #e53935;
   color: white;
-  padding: 5px 10px;
+  padding: 8px 15px;
   font-size: 14px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  margin-top: 10px;
+  align-self: flex-end; /* Align buttons to the right */
 }
 
 .expense-list button:hover {
-  background-color: #e53935;
+  background-color: #d32f2f;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .income-expense-summary {
+    flex-direction: column; /* Stack items for smaller screens */
+  }
+
   .category-grid {
-    grid-template-columns: repeat(2, 1fr); /* Adjust to 2 columns for smaller screens */
+    grid-template-columns: repeat(2, 1fr); /* Adjust to 2 columns */
+  }
+
+  .tabs button {
+    width: 100%; /* Full width buttons */
   }
 
   .expense-summary,
   .income-summary,
   .total-summary {
+    text-align: center;
     margin-bottom: 15px;
   }
-
-  .tabs button {
-    width: 100%;
-    margin-bottom: 10px;
-  }
 }
+
 </style>
 
