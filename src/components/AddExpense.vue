@@ -1,97 +1,90 @@
 <template>
   <div class="dashboard-view">
-    <!-- Expense & Income Summary -->
-    <h3>Expense & Income</h3>
-    <div class="income-expense-summary">
-      <!-- Expense Summary -->
-      <div class="expense-summary">
-        <span>Expense: </span>
-        <span class="expense">-{{ totalExpense }} {{ entry.currency }}</span>
+    <!-- Summary Section -->
+    <div class="summary-grid">
+      <div class="summary-item">
+        <span class="label">Expense</span>
+        <span class="value expense">-{{ totalExpense }} {{ entry.currency }}</span>
       </div>
-      <!-- Income Summary -->
-      <div class="income-summary">
-        <span>Income: </span>
-        <span class="income">+{{ totalIncome }} {{ entry.currency }}</span>
+      <div class="summary-item">
+        <span class="label">Income</span>
+        <span class="value income">+{{ totalIncome }} {{ entry.currency }}</span>
       </div>
-      <!-- Total Balance -->
-      <div class="total-summary">
-        <span>Total Balance: </span>
-        <span class="total">{{ total }} {{ entry.currency }}</span>
+      <div class="summary-item">
+        <span class="label">Balance</span>
+        <span class="value balance">{{ total }} {{ entry.currency }}</span>
       </div>
+    </div>
+
+    <!-- Tabs for Expense and Income -->
+    <div class="tabs">
+      <button @click="setType('expense')" :class="{ active: type === 'expense' }">Expense</button>
+      <button @click="setType('income')" :class="{ active: type === 'income' }">Income</button>
     </div>
 
     <!-- Input Form -->
-    <div class="input-form">
-      <!-- Tabs for Expense and Income -->
-      <div class="tabs">
-        <button @click="setType('expense')" :class="{ active: type === 'expense' }">Expense</button>
-        <button @click="setType('income')" :class="{ active: type === 'income' }">Income</button>
+    <form @submit.prevent="addOrUpdateEntry" class="form-container">
+      <div class="form-group compact">
+        <label for="date">Date</label>
+        <input id="date" v-model="entry.date" type="date" required />
+      </div>
+      <div class="form-group compact">
+        <label for="note">Note</label>
+        <input id="note" v-model="entry.note" type="text" placeholder="Enter value" />
+      </div>
+      <div class="form-group compact">
+        <label for="amount">{{ type === 'expense' ? 'Expense' : 'Income' }}</label>
+        <input id="amount" v-model="entry.amount" type="number" placeholder="0.00" required />
+      </div>
+      <div class="form-group compact">
+        <label for="currency">Currency</label>
+        <select id="currency" v-model="entry.currency" required>
+          <option value="CAD">CAD</option>
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+          <option value="JPY">JPY</option>
+          <option value="KRW">KRW</option>
+          <option value="GBP">GBP</option>
+        </select>
       </div>
 
-      <!-- Form -->
-      <form @submit.prevent="addOrUpdateEntry">
-        <div class="form-group">
-          <label>Date:</label>
-          <input v-model="entry.date" type="date" required />
+      <!-- Categories -->
+      <div class="category-grid">
+        <div
+          v-for="category in currentCategories"
+          :key="category.name"
+          :class="{ selected: entry.category === category.name }"
+          class="category"
+          @click="selectCategory(category.name)"
+        >
+          <i :class="category.icon"></i>
+          <span>{{ category.name }}</span>
         </div>
-        <div class="form-group">
-          <label>Note:</label>
-          <input v-model="entry.note" type="text" placeholder="Enter value" />
-        </div>
-        <div class="form-group">
-          <label>{{ type === 'expense' ? 'Expense' : 'Income' }}:</label>
-          <input v-model="entry.amount" type="number" placeholder="0.00" required />
-        </div>
-        <div class="form-group">
-          <label>Currency:</label>
-          <select v-model="entry.currency" required>
-            <option value="CAD">CAD</option>
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-            <option value="JPY">JPY</option>
-            <option value="KRW">KRW</option>
-            <option value="GBP">GBP</option>
-          </select>
-        </div>
+      </div>
 
-        <!-- Categories -->
-        <div class="category-section">
-          <h3>Category</h3>
-          <div class="category-grid">
-            <div
-              v-for="category in currentCategories"
-              :key="category.name"
-              :class="{ selected: entry.category === category.name }"
-              class="category"
-              @click="selectCategory(category.name)"
-            >
-              <i :class="category.icon"></i>
-              <span>{{ category.name }}</span>
-            </div>
-          </div>
-        </div>
+      <!-- Submit Button -->
+      <button type="submit" class="submit-button">{{ isEditing ? 'Update' : 'Submit' }}</button>
+    </form>
 
-        <!-- Submit Button -->
-        <button type="submit" class="submit-button">{{ isEditing ? 'Update' : 'Submit' }}</button>
-      </form>
-
-      <!-- Entered Values List -->
-      <div class="expense-list">
-        <h3>Entered Values</h3>
-        <ul>
-          <li v-for="expense in currentEntries" :key="expense.id">
+    <!-- Entered Values List -->
+    <div class="expense-list">
+      <ul>
+        <li v-for="expense in currentEntries" :key="expense.id">
+          <div class="expense-details">
             <strong>{{ expense.date }}</strong>: {{ expense.note }} - 
-            {{ type === 'expense' ? 'Expense' : 'Income' }}: 
             {{ expense.amount }} {{ expense.currency }}
             <em>({{ expense.category }})</em>
-            <button @click="editEntry(expense)">Edit</button>
-            <button @click="deleteEntry(expense.id)">Delete</button>
-          </li>
-        </ul>
-      </div>
+          </div>
+          <div class="actions">
+            <button @click="editEntry(expense)" class="edit-button">Edit</button>
+            <button @click="deleteEntry(expense.id)" class="delete-button">Delete</button>
+          </div>
+        </li>
+      </ul>
     </div>
   </div>
 </template>
+
 
 <script>
 import { setupDatabase, addExpense, getAllExpenses, addIncome, getAllIncome } from "../database.js";
@@ -221,78 +214,77 @@ export default {
 </script>
 
 
+
 <style scoped>
 /* Overall Layout */
 .dashboard-view {
   font-family: 'Arial', sans-serif;
   margin: 20px auto;
-  max-width: 800px;
-  padding: 20px;
-  background-color: #f9f9f9; /* Softer background */
-  border-radius: 10px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); /* Softer shadow */
-  color: #333;
-  line-height: 1.6;
-}
-
-/* Income & Expense Summary */
-.income-expense-summary {
-  display: flex;
-  flex-direction: column; /* Stack items vertically for mobile */
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
+  max-width: 600px;
   padding: 15px;
   background-color: #ffffff;
   border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.expense-summary,
-.income-summary,
-.total-summary {
-  font-size: 18px;
-  font-weight: bold;
+/* Summary Section */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.summary-item {
   text-align: center;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
 }
 
-.expense-summary span {
-  color: #e53935; /* Red for expenses */
+.summary-item .value {
+  display: block;
+  font-size: 16px;
 }
 
-.income-summary span {
-  color: #1e88e5; /* Blue for income */
+.summary-item .expense {
+  color: #e53935;
 }
 
-.total-summary .total {
-  color: #43a047; /* Green for total balance */
-  font-size: 24px; /* Emphasize total */
+.summary-item .income {
+  color: #1e88e5;
+}
+
+.summary-item .balance {
+  color: #43a047;
 }
 
 /* Tabs */
 .tabs {
   display: flex;
   justify-content: center;
-  margin-bottom: 20px;
-  gap: 10px; /* Space between buttons */
+  margin-bottom: 15px;
+  gap: 5px;
 }
 
 .tabs button {
-  background-color: #ffffff;
-  border: 2px solid #ffa726;
-  color: #ffa726;
-  padding: 10px 20px;
-  font-size: 18px;
-  border-radius: 25px;
-  cursor: pointer;
+  flex: 1;
+  padding: 10px;
+  font-size: 14px;
   font-weight: bold;
-  transition: all 0.3s ease;
-  width: 45%; /* Make buttons responsive */
+  border: 1px solid #ffa726;
+  background-color: #ffffff;
+  color: #ffa726;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .tabs button.active {
   background-color: #ffa726;
-  color: white;
+  color: #ffffff;
 }
 
 .tabs button:hover {
@@ -300,32 +292,28 @@ export default {
 }
 
 /* Form Styling */
-.input-form {
-  margin-top: 20px;
+.form-container {
+  display: grid;
+  gap: 10px;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
 }
 
 .form-group label {
-  display: block;
-  font-size: 16px;
+  font-size: 12px;
   font-weight: bold;
-  color: #333;
   margin-bottom: 5px;
 }
 
 .form-group input,
 .form-group select {
-  width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  border: 2px solid #ddd;
-  border-radius: 10px;
-  background-color: #fff8e1;
-  box-sizing: border-box;
-  transition: border-color 0.3s ease;
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
 }
 
 .form-group input:focus,
@@ -334,140 +322,96 @@ export default {
   outline: none;
 }
 
-/* Category Section */
-.category-section h3 {
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 10px;
-  text-align: center;
-}
-
+/* Categories */
 .category-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
+  gap: 10px;
 }
 
 .category {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  text-align: center;
   padding: 10px;
-  border: 2px solid #ddd;
-  border-radius: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.category:hover {
-  background-color: #ffa726;
-  color: white;
-}
-
+.category:hover,
 .category.selected {
   background-color: #ffa726;
-  color: white;
+  color: #ffffff;
 }
 
-.category i {
-  font-size: 24px;
-  margin-bottom: 5px;
-}
-
-/* Submit Button */
+/* Buttons */
 .submit-button {
-  width: 100%;
-  padding: 15px;
-  background-color: #ffa726;
-  color: white;
-  font-size: 18px;
+  padding: 12px;
+  font-size: 14px;
   font-weight: bold;
+  color: #ffffff;
+  background-color: #ffa726;
   border: none;
-  border-radius: 25px;
+  border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  margin-top: 20px;
 }
 
 .submit-button:hover {
   background-color: #ff9800;
 }
 
-/* Entered Values List */
-.expense-list {
-  margin-top: 40px;
-}
-
-.expense-list h3 {
-  font-size: 18px;
-  text-align: center;
-  margin-bottom: 10px;
-}
-
+/* Entered Values */
 .expense-list ul {
-  list-style-type: none;
+  list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 .expense-list li {
-  background-color: #ffffff;
-  padding: 15px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   display: flex;
-  flex-direction: column; /* Stack content for mobile */
+  justify-content: space-between;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
-.expense-list li strong {
+.expense-details {
+  flex: 1;
+}
+
+.actions {
+  display: flex;
+  gap: 5px;
+}
+
+.edit-button,
+.delete-button {
+  padding: 5px 10px;
+  font-size: 12px;
   font-weight: bold;
-}
-
-.expense-list li em {
-  font-style: italic;
-  color: #555;
-}
-
-.expense-list button {
-  background-color: #e53935;
-  color: white;
-  padding: 8px 15px;
-  font-size: 14px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  margin-top: 10px;
-  align-self: flex-end; /* Align buttons to the right */
 }
 
-.expense-list button:hover {
+.edit-button {
+  background-color: #4caf50;
+  color: #ffffff;
+}
+
+.delete-button {
+  background-color: #e53935;
+  color: #ffffff;
+}
+
+.edit-button:hover {
+  background-color: #43a047;
+}
+
+.delete-button:hover {
   background-color: #d32f2f;
 }
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .income-expense-summary {
-    flex-direction: column; /* Stack items for smaller screens */
-  }
-
-  .category-grid {
-    grid-template-columns: repeat(2, 1fr); /* Adjust to 2 columns */
-  }
-
-  .tabs button {
-    width: 100%; /* Full width buttons */
-  }
-
-  .expense-summary,
-  .income-summary,
-  .total-summary {
-    text-align: center;
-    margin-bottom: 15px;
-  }
-}
-
 </style>
-
