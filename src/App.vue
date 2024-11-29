@@ -2,7 +2,7 @@
   <div class="app-container">
     <!-- Top Navigation Bar -->
     <header class="top-nav">
-      <h2>My Budget App</h2>
+      <h2>MY Smart Diary</h2>
       <div class="nav-links">
         <router-link to="/" class="nav-item" active-class="active-link">Dashboard</router-link>
         <router-link to="/add-expense" class="nav-item" active-class="active-link">Input</router-link>
@@ -52,9 +52,10 @@ export default {
   font-size: 1.8em; /* Slightly larger font size */
   color: #333;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.3px;
   font-weight: bold;
   margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 /* Navigation links in the top bar */
@@ -70,6 +71,7 @@ export default {
   font-size: 1.7em;
   border-radius: 5px; /* Rounded corners for the links */
   transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 .nav-item:hover {

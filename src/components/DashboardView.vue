@@ -1,64 +1,66 @@
 <template>
   <div class="dashboard-view">
-    <!-- 대시보드 제목 -->
-    <h1>Dashboard View</h1>
-
-    <!-- 요약 카드 섹션 -->
-    <div class="summary-card">
-      <p class="expense">Expense: <span>{{ totalExpense }} CAD</span></p>
-      <p class="income">Income: <span>{{ totalIncome }} CAD</span></p>
-      <p class="balance">Total Balance: <span>{{ totalBalance }} CAD</span></p>
+    <!-- Dashboard Summary -->
+    <div class="dashboard-summary">
+      <div class="summary-title">가계부 요약</div>
+      <div class="summary-box">
+        <!-- Expense -->
+        <div class="summary-item expense">
+          <div class="label">지출</div>
+          <div class="value">-{{ totalExpense }} CAD</div>
+        </div>
+        <!-- Income -->
+        <div class="summary-item income">
+          <div class="label">수입</div>
+          <div class="value">+{{ totalIncome }} CAD</div>
+        </div>
+        <!-- Balance -->
+        <div class="summary-item balance">
+          <div class="label">총 잔액</div>
+          <div class="value">{{ totalBalance }} CAD</div>
+        </div>
+      </div>
     </div>
 
-
-    <!-- 그래프를 바꾸는 버튼들 -->
+    <!-- Navigation Buttons -->
     <div class="nav-buttons">
-      <!-- 왼쪽 버튼: 이전 그래프로 이동 -->
       <button @click="previousGraph" class="nav-button">←</button>
-      <!-- 오른쪽 버튼: 다음 그래프로 이동 -->
       <button @click="nextGraph" class="nav-button">→</button>
     </div>
 
-    <!-- 현재 선택된 그래프를 보여주는 영역  -->
+    <!-- Graph Section -->
     <div class="graphs">
-      <!-- 1번 그래프: 월별 돈 흐름 -->
+      <!-- Graph 1: Monthly Money Flow -->
       <div v-if="currentGraph === 1">
-        <h2>Monthly Money Flow</h2>
-        <!-- 데이터가 있을 경우 바 그래프를 보여준다. -->
+        <h2>수입/지출 내역 비교</h2>
         <div v-if="hasMonthlyData">
           <Bar :data="moneyFlowChartData" :options="chartOptions" />
         </div>
-        <!-- 데이터가 없을 경우 메시지 표시 -->
-        <p v-else>No data available for money flow comparison.</p>
+        <p v-else>데이터가 없습니다.</p>
       </div>
 
-      <!-- 2번 그래프: 월별 지출 요약 -->
+      <!-- Graph 2: Expense Summary -->
       <div v-if="currentGraph === 2">
-        <h2>Monthly Expense Summary</h2>
-        <!-- 데이터가 있을 경우 파이 그래프를 보여준다-->
+        <h2>월 단위 지출내역</h2>
         <div v-if="monthlySummary.expenses.length">
           <Pie :data="expenseChartData" :options="pieChartOptions" />
         </div>
-        <!-- 데이터가 없을 경우 메시지 표시 -->
-        <p v-else>No expense data available for summary.</p>
+        <p v-else>지출 데이터가 없습니다.</p>
       </div>
 
-      <!-- 3번 그래프: 월별 수입 요약 -->
+      <!-- Graph 3: Income Summary -->
       <div v-if="currentGraph === 3">
-        <h2>Monthly Income Summary</h2>
-        <!-- 데이터가 있을 경우 파이 그래프를 보여준다 -->
+        <h2>월 단위 수입내역</h2>
         <div v-if="monthlySummary.income.length">
           <Pie :data="incomeChartData" :options="pieChartOptions" />
         </div>
-        <!-- 데이터가 없을경우 메시지 표시 -->
-        <p v-else>No income data available for summary.</p>
+        <p v-else>수입 데이터가 없습니다.</p>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { setupDatabase, getAllExpenses, getAllIncome } from "../database.js";
 import { ref, onMounted, computed } from "vue";
 import { Pie, Bar } from "vue-chartjs";
 import {
@@ -71,157 +73,134 @@ import {
   BarElement,
   LinearScale,
 } from "chart.js";
-import ChartDataLabels from "chartjs-plugin-datalabels";
+import { setupDatabase, getAllExpenses, getAllIncome } from "../database.js";
 
-// Chart.js에서 사용할 기능 등록
-ChartJS.register(
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  CategoryScale,
-  BarElement,
-  LinearScale,
-  ChartDataLabels
-);
+// Register Chart.js components
+ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale, BarElement, LinearScale);
 
 export default {
   name: "DashboardView",
   components: { Pie, Bar },
   setup() {
-    // 상태 변수 정의
-    const expenses = ref([]); // 지출 데이터
-    const income = ref([]); // 수입 데이터
-    const currentGraph = ref(1); // 현재 선택된 그래프 (1, 2, 3 중 하나)
+    const expenses = ref([]); // Initialize expenses
+    const income = ref([]); // Initialize income
+    const currentGraph = ref(1); // Current graph index
 
-    // 데이터베이스에서 지출 및 수입 데이터를 가져오는 함수
     const fetchData = async () => {
-      const db = await setupDatabase(); // 데이터베이스 설정
-      expenses.value = await getAllExpenses(db); // 지출 데이터 가져오기
-      income.value = await getAllIncome(db); // 수입 데이터 가져오기
-
-      console.log("Expenses:", expenses.value); // Debugging
-      console.log("Income:", income.value); // Debugging
+      try {
+        const db = await setupDatabase();
+        expenses.value = await getAllExpenses(db) || [];
+        income.value = await getAllIncome(db) || [];
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        expenses.value = [];
+        income.value = [];
+      }
     };
 
-    // 총 지출 계산
     const totalExpense = computed(() =>
       expenses.value.reduce((sum, exp) => sum + exp.amount, 0)
     );
 
-    // 총 수입 계산
     const totalIncome = computed(() =>
       income.value.reduce((sum, inc) => sum + inc.amount, 0)
     );
 
-    // 총 잔액 계산 (수입 - 지출)
     const totalBalance = computed(() => totalIncome.value - totalExpense.value);
 
-    // Check if any data exists
-    const hasMonthlyData = computed(
-      () => expenses.value.length > 0 || income.value.length > 0
-    );
-    
+    const hasMonthlyData = computed(() => expenses.value.length > 0 || income.value.length > 0);
 
-    // 카테고리별 데이터를 요약하는 재사용 가능한 함수
-    const summarizeData = (data) => {
-      return Object.entries(
+    const summarizeData = (data) =>
+      Object.entries(
         data.reduce((summary, item) => {
           summary[item.category] = (summary[item.category] || 0) + item.amount;
           return summary;
         }, {})
       ).map(([category, amount]) => ({ category, amount }));
-    };
 
-    // 지출 및 수입 데이터를 카테고리별로 요약
     const monthlySummary = computed(() => ({
-      expenses: summarizeData(expenses.value), // 카테고리별 지출 합산
-      income: summarizeData(income.value), // 카테고리별 수입 합산
+      expenses: summarizeData(expenses.value),
+      income: summarizeData(income.value),
     }));
 
-    // 차트 데이터를 생성하는 재사용 가능한 함수
-    const createChartData = (summary, label, colors) => ({
-      labels: summary.map((item) => item.category), // 카테고리 레이블
-      datasets: [
-        {
-          label, // 데이터셋 레이블
-          data: summary.map((item) => item.amount), // 데이터 값
-          backgroundColor: colors, // 막대/파이 색상
-        },
-      ],
-    });
-
-    // 총 수입과 지출 데이터를 위한 바 차트 데이터
     const moneyFlowChartData = computed(() => ({
-      labels: ["Total"], // 단일 레이블
+      labels: ["Total"],
       datasets: [
         {
-          label: "Total Income (CAD)", // 총 수입
+          label: "Total Income (CAD)",
           data: [totalIncome.value],
           backgroundColor: "#4BC0C0",
         },
         {
-          label: "Total Expenditure (CAD)", // 총 지출
+          label: "Total Expenditure (CAD)",
           data: [totalExpense.value],
           backgroundColor: "#FF6384",
         },
       ],
     }));
 
-    // 카테고리별 지출 데이터를 위한 파이 차트 데이터
+    const createChartData = (summary, label, colors) => ({
+      labels: summary.map((item) => item.category),
+      datasets: [
+        {
+          label,
+          data: summary.map((item) => item.amount),
+          backgroundColor: colors,
+        },
+      ],
+    });
+
     const expenseChartData = computed(() =>
       createChartData(
-        monthlySummary.value.expenses, // 요약된 지출 데이터
+        monthlySummary.value.expenses,
         "Expenses by Category",
-        ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"] // 색상 배열
+        ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"]
       )
     );
 
-    // 카테고리별 수입 데이터를 위한 파이 차트 데이터
     const incomeChartData = computed(() =>
       createChartData(
-        monthlySummary.value.income, // 요약된 수입 데이터
+        monthlySummary.value.income,
         "Income by Category",
-        ["#4BC0C0", "#FFCE56"] // 색상 배열
+        ["#4BC0C0", "#FFCE56"]
       )
     );
 
-    // 바 차트 옵션 (디자인 및 툴팁 포함)
     const chartOptions = {
       responsive: true,
-      maintainAspectRatio: false, // 컨테이너 크기에 맞게 조정
+      maintainAspectRatio: false,
       plugins: {
         legend: {
           position: "top",
           labels: {
-            color: "#333", // 범례 색상
-            font: { size: 14, weight: "bold" }, // 폰트 스타일
-            padding: 20, // 범례와 그래프 간격
+            color: "#333",
+            font: { size: 14, weight: "bold" },
           },
         },
         tooltip: {
-          backgroundColor: "rgba(0, 0, 0, 0.8)", // 툴팁 배경색
+          backgroundColor: "rgba(0, 0, 0, 0.8)",
           titleColor: "#fff",
           bodyColor: "#fff",
           callbacks: {
-            label: (tooltipItem) => `$${tooltipItem.raw} CAD`, // 값 포맷
+            label: (tooltipItem) => `$${tooltipItem.raw} CAD`,
           },
         },
       },
       scales: {
         y: {
-          beginAtZero: true, // 0부터 시작
-          grid: { color: "rgba(0, 0, 0, 0.1)", drawBorder: false },
-          ticks: { color: "#555", font: { size: 12, weight: "500" }, stepSize: 50 },
+          beginAtZero: true,
+          ticks: {
+            color: "#555",
+          },
         },
         x: {
-          grid: { color: "rgba(0, 0, 0, 0.05)", drawBorder: false },
-          ticks: { color: "#555", font: { size: 12, weight: "500" }, padding: 10 },
+          ticks: {
+            color: "#555",
+          },
         },
       },
     };
 
-    // 파이 차트 옵션
     const pieChartOptions = {
       responsive: true,
       maintainAspectRatio: true,
@@ -231,23 +210,19 @@ export default {
           labels: { color: "#333", font: { size: 14, weight: "bold" } },
         },
         tooltip: {
-          backgroundColor: "rgba(0, 0, 0, 0.8)",
-          titleColor: "#fff",
-          bodyColor: "#fff",
           callbacks: {
             label: (tooltipItem) => {
               const dataset = tooltipItem.dataset.data;
               const currentValue = dataset[tooltipItem.dataIndex];
               const total = dataset.reduce((sum, value) => sum + value, 0);
               const percentage = ((currentValue / total) * 100).toFixed(2);
-              return `${tooltipItem.label}: $${currentValue} CAD (${percentage}%)`; // 값 및 퍼센트 표시
+              return `${tooltipItem.label}: $${currentValue} CAD (${percentage}%)`;
             },
           },
         },
       },
     };
 
-    // 그래프 탐색 기능
     const nextGraph = () => {
       currentGraph.value = currentGraph.value < 3 ? currentGraph.value + 1 : 1;
     };
@@ -256,10 +231,8 @@ export default {
       currentGraph.value = currentGraph.value > 1 ? currentGraph.value - 1 : 3;
     };
 
-    // 컴포넌트가 로드될 때 데이터 가져오기
     onMounted(fetchData);
 
-    // 반환값
     return {
       expenses,
       income,
@@ -281,26 +254,70 @@ export default {
 };
 </script>
 
-
 <style scoped>
-/* 대시보드 전체 레이아웃 */
-.dashboard-view {
+/* Dashboard Summary Box */
+.dashboard-summary {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.summary-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.summary-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.summary-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
-  max-width: 100%;
-  background-color: #f9f9f9; /* 배경색 추가 */
-  border-radius: 10px; /* 둥근 모서리 */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* 살짝 그림자 효과 */
-  min-height: 60%; /* 최소 높이 설정 */
+  font-size: 14px;
+  font-weight: bold;
 }
 
-/* 네비게이션 버튼 스타일 */
+.summary-item .label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.summary-item .value {
+  font-size: 16px;
+}
+
+.summary-item.expense .value {
+  color: #e53935; /* Red for expenses */
+}
+
+.summary-item.income .value {
+  color: #1e88e5; /* Blue for income */
+}
+
+.summary-item.balance .value {
+  color: #43a047; /* Green for balance */
+}
+
+/* Navigation Buttons */
 .nav-buttons {
   margin: 20px 0;
   display: flex;
   gap: 20px;
+  justify-content: center;
 }
 
 .nav-button {
@@ -308,39 +325,43 @@ export default {
   color: white;
   padding: 12px 24px;
   border: none;
-  border-radius: 50%; /* 원형 버튼 */
+  border-radius: 50%;
   cursor: pointer;
   font-size: 20px;
-  transition: background-color 0.3s ease, transform 0.2s ease; /* 부드러운 애니메이션 */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 버튼 그림자 효과 */
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .nav-button:hover {
   background-color: #0056b3;
-  transform: scale(1.1); /* 마우스 오버 시 확대 효과 */
+  transform: scale(1.1);
 }
 
 .nav-button:active {
-  transform: scale(0.95); /* 클릭 시 약간 축소 */
+  transform: scale(0.95);
 }
 
-/* 그래프 영역 스타일 */
+/* Graph Section */
 .graphs {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 10px;
+  padding: 20px;
   width: 100%;
-  max-width: 600px; /* 최대 너비 설정 */
+  max-width: 800px; /* Larger max-width for graphs */
+  margin: 0 auto; /* Center container */
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .graphs canvas {
-  width: 100% !important; /* 컨테이너 너비에 맞춤 */
-  max-width: 400px; /* 차트 최대 너비 */
-  height: auto !important; /* 비율 유지 */
-  aspect-ratio: 1 / 1; /* 정사각형 비율 유지 */
-  margin: 20px 0; /* 위아래 간격 추가 */
+  width: 100% !important;
+  max-width: 400px;
+  height: auto !important;
+  aspect-ratio: 1 / 1; /* Square ratio */
+  margin: 20px 0;
 }
 
 .graphs h2 {
@@ -348,30 +369,26 @@ export default {
   margin-bottom: 20px;
   font-size: 1.8em;
   color: #333;
-  font-family: 'Arial', sans-serif; /* 제목 폰트 설정 */
+  font-family: 'Arial', sans-serif;
 }
 
 .graphs p {
   text-align: center;
   font-size: 1.2em;
   color: #999;
-  font-style: italic; /* 메시지 스타일 변경 */
+  font-style: italic;
   margin-top: 10px;
 }
 
-/* 반응형 디자인 */
+/* Ensure Charts are Centered on Small Screens */
 @media (max-width: 768px) {
-  .dashboard-view {
-    padding: 15px;
-  }
-
-  .nav-button {
-    font-size: 18px;
-    padding: 10px;
-  }
-
   .graphs {
-    max-width: 100%;
+    padding: 10px;
+    max-width: 100%; /* Use full width for smaller screens */
+  }
+
+  .graphs canvas {
+    max-width: 300px; /* Smaller max width for canvas */
   }
 
   .graphs h2 {
@@ -384,8 +401,8 @@ export default {
 }
 
 @media (max-width: 480px) {
-  .dashboard-view h1 {
-    font-size: 1.6em;
+  .dashboard-summary {
+    padding: 10px;
   }
 
   .graphs h2 {
