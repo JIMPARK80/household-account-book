@@ -6,7 +6,7 @@
       <div class="nav-links">
         <router-link to="/" class="nav-item" active-class="active-link">Dashboard</router-link>
         <router-link to="/add-expense" class="nav-item" active-class="active-link">Input</router-link>
-      </div>
+        <router-link to="/calendar" class="nav-item" active-class="active-link">Calendar</router-link>      </div>
     </header>
 
     <!-- Main Content Area -->
