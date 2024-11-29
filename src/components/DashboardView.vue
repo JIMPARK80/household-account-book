@@ -148,70 +148,111 @@ export default {
       ],
     }));
 
-    // 그래프 옵션 (디자인 및 툴팁 설정)
-    const chartOptions = {
-      responsive: true,
-      plugins: {
-        legend: { position: "top", labels: { color: "#333" } },
-        tooltip: {
-          callbacks: {
-            label: (tooltipItem) => `$${tooltipItem.raw} CAD`,
-          },
-          backgroundColor: "rgba(0, 0, 0, 0.7)",
-          titleColor: "#fff",
-          bodyColor: "#fff",
+// 그래프 옵션 (디자인 및 툴팁 설정)
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false, // 컨테이너 크기에 맞게 조정
+  plugins: {
+    legend: {
+      position: "top",
+      labels: {
+        color: "#333", // 범례 색상
+        font: {
+          size: 14, // 범례 폰트 크기
+          weight: "bold", // 폰트 굵기
+        },
+        padding: 20, // 범례와 그래프 간 간격
+      },
+    },
+    tooltip: {
+      enabled: true,
+      backgroundColor: "rgba(0, 0, 0, 0.8)", // 툴팁 배경색
+      titleColor: "#ffffff", // 툴팁 제목 색상
+      bodyColor: "#ffffff", // 툴팁 본문 색상
+      titleFont: {
+        size: 16, // 툴팁 제목 폰트 크기
+        weight: "bold",
+      },
+      bodyFont: {
+        size: 14, // 툴팁 본문 폰트 크기
+      },
+      padding: 10, // 툴팁 내부 패딩
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.3)", // 툴팁 테두리 색상
+      callbacks: {
+        label: (tooltipItem) => `$${tooltipItem.raw} CAD`, // 데이터 값 형식
+      },
+    },
+  },
+  scales: {
+    y: {
+      beginAtZero: true, // 0부터 시작
+      grid: {
+        color: "rgba(0, 0, 0, 0.1)", // Y축 격자선 색상
+        lineWidth: 1, // 격자선 두께
+        drawBorder: false, // 축 테두리 제거
+      },
+      ticks: {
+        color: "#555", // Y축 눈금 색상
+        font: {
+          size: 12, // Y축 눈금 폰트 크기
+          weight: "500",
+        },
+        callback: (value) => `$${value}`, // 값 포맷팅
+        stepSize: 50, // 눈금 간격
+      },
+    },
+    x: {
+      grid: {
+        color: "rgba(0, 0, 0, 0.05)", // X축 격자선 색상
+        lineWidth: 1,
+        drawBorder: false,
+      },
+      ticks: {
+        color: "#555", // X축 눈금 색상
+        font: {
+          size: 12, // X축 눈금 폰트 크기
+          weight: "500",
+        },
+        padding: 10, // X축 눈금과 축 간격
+      },
+    },
+  },
+};
+// 파이 그래프 옵션
+const pieChartOptions = {
+  responsive: true,
+  maintainAspectRatio: true, // Ensure the chart maintains its aspect ratio
+  plugins: {
+    legend: {
+      position: "top",
+      labels: {
+        color: "#333",
+        font: {
+          size: 14,
+          weight: "bold",
         },
       },
-      scales: {
-        y: { beginAtZero: true, 
-          ticks: { color: "#333" , 
-          stepsize: 100, 
-          callback: (value) => `$${value}`,
-        }, 
-          grid: { color: "#ddd" } 
-        },
-        x: { 
-          ticks: { color: "#333" }, 
-          grid: { color: "#ddd" } 
+    },
+    tooltip: {
+      backgroundColor: "rgba(0, 0, 0, 0.8)",
+      titleColor: "#fff",
+      bodyColor: "#fff",
+      callbacks: {
+        label: (tooltipItem) => {
+          const dataset = tooltipItem.dataset.data;
+          const currentValue = dataset[tooltipItem.dataIndex];
+          const total = dataset.reduce((sum, value) => sum + value, 0);
+          const percentage = ((currentValue / total) * 100).toFixed(2);
+          return `${tooltipItem.label}: $${currentValue} CAD (${percentage}%)`;
         },
       },
-    };
+    },
+  },
+};
 
-    // 파이 그래프 옵션
-    const pieChartOptions = {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: "top",
-          labels: {
-            color: "#333",
-          },
-        },
-        tooltip: {
-          callbacks: {
-            label: (tooltipItem) => {
-              const dataset = tooltipItem.dataset.data;
-              const currentValue = dataset[tooltipItem.dataIndex];
-              const total = dataset.reduce((sum, value) => sum + value, 0);
-              const percentage = ((currentValue / total) * 100).toFixed(2); // Calculate percentage
-              return `${tooltipItem.label}: $${currentValue} CAD (${percentage}%)`;
-            },
-          },
-          backgroundColor: "rgba(0, 0, 0, 0.7)",
-          titleColor: "#fff",
-          bodyColor: "#fff",
-        },
-        datalabels: {
-          color: "#000000",
-          formatter: (value, context) => {
-            const dataset = context.chart.data.datasets[0].data;
-            const total = dataset.reduce((sum, val) => sum + val, 0);
-            const percentage = ((value / total) * 100).toFixed(1);
-            return `${percentage}%`; // Display percentage on the graph
-          },
-        },
-      },
-    };
+
+
     // 컴포넌트가 처음 실행될 때 데이터베이스에서 지출/수입 데이터를 가져옴
     onMounted(async () => {
       const db = await setupDatabase();
@@ -247,14 +288,17 @@ export default {
 </script>
 
 <style scoped>
-/* 스타일 정의 (디자인) */
-
+/* 대시보드 전체 레이아웃 */
 .dashboard-view {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 20px;
   max-width: 100%;
+  background-color: #f9f9f9; /* 배경색 추가 */
+  border-radius: 10px; /* 둥근 모서리 */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* 살짝 그림자 효과 */
+  min-height: 60%; /* 최소 높이 설정 */
 }
 
 /* 네비게이션 버튼 스타일 */
@@ -267,58 +311,72 @@ export default {
 .nav-button {
   background-color: #007bff;
   color: white;
-  padding: 10px 20px;
+  padding: 12px 24px;
   border: none;
-  border-radius: 5px;
+  border-radius: 50%; /* 원형 버튼 */
   cursor: pointer;
-  font-size: 30px;
+  font-size: 20px;
+  transition: background-color 0.3s ease, transform 0.2s ease; /* 부드러운 애니메이션 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 버튼 그림자 효과 */
 }
 
 .nav-button:hover {
   background-color: #0056b3;
+  transform: scale(1.1); /* 마우스 오버 시 확대 효과 */
 }
 
-/* 그래프 스타일 */
+.nav-button:active {
+  transform: scale(0.95); /* 클릭 시 약간 축소 */
+}
+
+/* 그래프 영역 스타일 */
 .graphs {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 10px;
+  width: 100%;
+  max-width: 600px; /* 최대 너비 설정 */
 }
 
 .graphs canvas {
-  width: 100% !important; /* Scale to container width */
-  max-width: 300px; /* Maximum width for the chart */
-  height: auto !important; /* Maintain aspect ratio */
-  aspect-ratio: 1 / 1; /* Ensure the chart remains square */
-  margin: 0 auto;
+  width: 100% !important; /* 컨테이너 너비에 맞춤 */
+  max-width: 400px; /* 차트 최대 너비 */
+  height: auto !important; /* 비율 유지 */
+  aspect-ratio: 1 / 1; /* 정사각형 비율 유지 */
+  margin: 20px 0; /* 위아래 간격 추가 */
 }
 
 .graphs h2 {
   text-align: center;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
   font-size: 1.8em;
+  color: #333;
+  font-family: 'Arial', sans-serif; /* 제목 폰트 설정 */
 }
 
 .graphs p {
   text-align: center;
   font-size: 1.2em;
-  color: #666;
+  color: #999;
+  font-style: italic; /* 메시지 스타일 변경 */
+  margin-top: 10px;
 }
 
+/* 반응형 디자인 */
 @media (max-width: 768px) {
   .dashboard-view {
     padding: 15px;
   }
 
-  .graphs {
-    max-width: 100%;
+  .nav-button {
+    font-size: 18px;
+    padding: 10px;
   }
 
-  .nav-button {
-    font-size: 14px;
-    padding: 8px 16px;
+  .graphs {
+    max-width: 100%;
   }
 
   .graphs h2 {
@@ -332,7 +390,7 @@ export default {
 
 @media (max-width: 480px) {
   .dashboard-view h1 {
-    font-size: 1.8em;
+    font-size: 1.6em;
   }
 
   .graphs h2 {
@@ -340,8 +398,8 @@ export default {
   }
 
   .nav-button {
-    font-size: 12px;
-    padding: 6px 12px;
+    font-size: 16px;
+    padding: 8px;
   }
 }
 </style>
