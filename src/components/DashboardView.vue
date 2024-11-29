@@ -3,6 +3,14 @@
     <!-- 대시보드 제목 -->
     <h1>Dashboard View</h1>
 
+    <!-- 요약 카드 섹션 -->
+    <div class="summary-card">
+      <p class="expense">Expense: <span>{{ totalExpense }} CAD</span></p>
+      <p class="income">Income: <span>{{ totalIncome }} CAD</span></p>
+      <p class="balance">Total Balance: <span>{{ totalBalance }} CAD</span></p>
+    </div>
+
+
     <!-- 그래프를 바꾸는 버튼들 -->
     <div class="nav-buttons">
       <!-- 왼쪽 버튼: 이전 그래프로 이동 -->
@@ -65,213 +73,199 @@ import {
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 
-
-// Chart.js에서 사용할 기능들을 등록
-ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale, BarElement, LinearScale, ChartDataLabels);
+// Chart.js에서 사용할 기능 등록
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  CategoryScale,
+  BarElement,
+  LinearScale,
+  ChartDataLabels
+);
 
 export default {
   name: "DashboardView",
-  components: { Pie, Bar }, // 우리가 사용할 그래프 컴포넌트
+  components: { Pie, Bar },
   setup() {
-    const expenses = ref([]); // 지출 데이터를 담을 공간
-    const income = ref([]); // 수입 데이터를 담을 공간
-    const currentGraph = ref(1); // 현재 보여줄 그래프(1,2,3 중 선택)
+    // 상태 변수 정의
+    const expenses = ref([]); // 지출 데이터
+    const income = ref([]); // 수입 데이터
+    const currentGraph = ref(1); // 현재 선택된 그래프 (1, 2, 3 중 하나)
 
-    // 지출과 수입 데이터를 요약해서 보여주는 계산된 값
-    const monthlySummary = computed(() => {
-      const expenseSummary = {};
-      const incomeSummary = {};
+    // 데이터베이스에서 지출 및 수입 데이터를 가져오는 함수
+    const fetchData = async () => {
+      const db = await setupDatabase(); // 데이터베이스 설정
+      expenses.value = await getAllExpenses(db); // 지출 데이터 가져오기
+      income.value = await getAllIncome(db); // 수입 데이터 가져오기
 
-      // 지출 데이터를 카테고리별로 합산
-      expenses.value.forEach((expense) => {
-        expenseSummary[expense.category] = (expenseSummary[expense.category] || 0) + expense.amount;
-      });
+      console.log("Expenses:", expenses.value); // Debugging
+      console.log("Income:", income.value); // Debugging
+    };
 
-      // 수입 데이터를 카테고리별로 합산
-      income.value.forEach((inc) => {
-        incomeSummary[inc.category] = (incomeSummary[inc.category] || 0) + inc.amount;
-      });
+    // 총 지출 계산
+    const totalExpense = computed(() =>
+      expenses.value.reduce((sum, exp) => sum + exp.amount, 0)
+    );
 
-      // 정리된 데이터를 반환
-      return {
-        expenses: Object.entries(expenseSummary).map(([category, amount]) => ({ category, amount })),
-        income: Object.entries(incomeSummary).map(([category, amount]) => ({ category, amount })),
-      };
-    });
+    // 총 수입 계산
+    const totalIncome = computed(() =>
+      income.value.reduce((sum, inc) => sum + inc.amount, 0)
+    );
 
-    // 데이터가 있는지 확인
-    const hasMonthlyData = computed(() => expenses.value.length || income.value.length);
+    // 총 잔액 계산 (수입 - 지출)
+    const totalBalance = computed(() => totalIncome.value - totalExpense.value);
 
-    // 총수입과 총지출을 계산해서 그래프 데이터를 만듦
-    const moneyFlowChartData = computed(() => {
-      const totalIncome = income.value.reduce((sum, inc) => sum + inc.amount, 0);
-      const totalExpenditure = expenses.value.reduce((sum, exp) => sum + exp.amount, 0);
+    // Check if any data exists
+    const hasMonthlyData = computed(
+      () => expenses.value.length > 0 || income.value.length > 0
+    );
+    
 
-      return {
-        labels: ["Total"],
-        datasets: [
-          {
-            label: "Total Income (CAD)", // 캐나다 달러 단위 수입
-            data: [totalIncome],
-            backgroundColor: "#4BC0C0",
-          },
-          {
-            label: "Total Expenditure (CAD)", // 캐나다 달러 단위 지출
-            data: [totalExpenditure],
-            backgroundColor: "#FF6384",
-          },
-        ],
-      };
-    });
+    // 카테고리별 데이터를 요약하는 재사용 가능한 함수
+    const summarizeData = (data) => {
+      return Object.entries(
+        data.reduce((summary, item) => {
+          summary[item.category] = (summary[item.category] || 0) + item.amount;
+          return summary;
+        }, {})
+      ).map(([category, amount]) => ({ category, amount }));
+    };
 
-    // 카테고리별 지출 데이터를 그래프로 나타냄
-    const expenseChartData = computed(() => ({
-      labels: monthlySummary.value.expenses.map((item) => item.category),
+    // 지출 및 수입 데이터를 카테고리별로 요약
+    const monthlySummary = computed(() => ({
+      expenses: summarizeData(expenses.value), // 카테고리별 지출 합산
+      income: summarizeData(income.value), // 카테고리별 수입 합산
+    }));
+
+    // 차트 데이터를 생성하는 재사용 가능한 함수
+    const createChartData = (summary, label, colors) => ({
+      labels: summary.map((item) => item.category), // 카테고리 레이블
       datasets: [
         {
-          label: "Expenses by Category",
-          data: monthlySummary.value.expenses.map((item) => item.amount),
-          backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"],
+          label, // 데이터셋 레이블
+          data: summary.map((item) => item.amount), // 데이터 값
+          backgroundColor: colors, // 막대/파이 색상
+        },
+      ],
+    });
+
+    // 총 수입과 지출 데이터를 위한 바 차트 데이터
+    const moneyFlowChartData = computed(() => ({
+      labels: ["Total"], // 단일 레이블
+      datasets: [
+        {
+          label: "Total Income (CAD)", // 총 수입
+          data: [totalIncome.value],
+          backgroundColor: "#4BC0C0",
+        },
+        {
+          label: "Total Expenditure (CAD)", // 총 지출
+          data: [totalExpense.value],
+          backgroundColor: "#FF6384",
         },
       ],
     }));
 
-    // 카테고리별 수입 데이터를 그래프로 나타냄
-    const incomeChartData = computed(() => ({
-      labels: monthlySummary.value.income.map((item) => item.category),
-      datasets: [
-        {
-          label: "Income by Category",
-          data: monthlySummary.value.income.map((item) => item.amount),
-          backgroundColor: ["#4BC0C0", "#FFCE56"],
-        },
-      ],
-    }));
+    // 카테고리별 지출 데이터를 위한 파이 차트 데이터
+    const expenseChartData = computed(() =>
+      createChartData(
+        monthlySummary.value.expenses, // 요약된 지출 데이터
+        "Expenses by Category",
+        ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"] // 색상 배열
+      )
+    );
 
-// 그래프 옵션 (디자인 및 툴팁 설정)
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false, // 컨테이너 크기에 맞게 조정
-  plugins: {
-    legend: {
-      position: "top",
-      labels: {
-        color: "#333", // 범례 색상
-        font: {
-          size: 14, // 범례 폰트 크기
-          weight: "bold", // 폰트 굵기
-        },
-        padding: 20, // 범례와 그래프 간 간격
-      },
-    },
-    tooltip: {
-      enabled: true,
-      backgroundColor: "rgba(0, 0, 0, 0.8)", // 툴팁 배경색
-      titleColor: "#ffffff", // 툴팁 제목 색상
-      bodyColor: "#ffffff", // 툴팁 본문 색상
-      titleFont: {
-        size: 16, // 툴팁 제목 폰트 크기
-        weight: "bold",
-      },
-      bodyFont: {
-        size: 14, // 툴팁 본문 폰트 크기
-      },
-      padding: 10, // 툴팁 내부 패딩
-      borderWidth: 1,
-      borderColor: "rgba(255, 255, 255, 0.3)", // 툴팁 테두리 색상
-      callbacks: {
-        label: (tooltipItem) => `$${tooltipItem.raw} CAD`, // 데이터 값 형식
-      },
-    },
-  },
-  scales: {
-    y: {
-      beginAtZero: true, // 0부터 시작
-      grid: {
-        color: "rgba(0, 0, 0, 0.1)", // Y축 격자선 색상
-        lineWidth: 1, // 격자선 두께
-        drawBorder: false, // 축 테두리 제거
-      },
-      ticks: {
-        color: "#555", // Y축 눈금 색상
-        font: {
-          size: 12, // Y축 눈금 폰트 크기
-          weight: "500",
-        },
-        callback: (value) => `$${value}`, // 값 포맷팅
-        stepSize: 50, // 눈금 간격
-      },
-    },
-    x: {
-      grid: {
-        color: "rgba(0, 0, 0, 0.05)", // X축 격자선 색상
-        lineWidth: 1,
-        drawBorder: false,
-      },
-      ticks: {
-        color: "#555", // X축 눈금 색상
-        font: {
-          size: 12, // X축 눈금 폰트 크기
-          weight: "500",
-        },
-        padding: 10, // X축 눈금과 축 간격
-      },
-    },
-  },
-};
-// 파이 그래프 옵션
-const pieChartOptions = {
-  responsive: true,
-  maintainAspectRatio: true, // Ensure the chart maintains its aspect ratio
-  plugins: {
-    legend: {
-      position: "top",
-      labels: {
-        color: "#333",
-        font: {
-          size: 14,
-          weight: "bold",
-        },
-      },
-    },
-    tooltip: {
-      backgroundColor: "rgba(0, 0, 0, 0.8)",
-      titleColor: "#fff",
-      bodyColor: "#fff",
-      callbacks: {
-        label: (tooltipItem) => {
-          const dataset = tooltipItem.dataset.data;
-          const currentValue = dataset[tooltipItem.dataIndex];
-          const total = dataset.reduce((sum, value) => sum + value, 0);
-          const percentage = ((currentValue / total) * 100).toFixed(2);
-          return `${tooltipItem.label}: $${currentValue} CAD (${percentage}%)`;
-        },
-      },
-    },
-  },
-};
+    // 카테고리별 수입 데이터를 위한 파이 차트 데이터
+    const incomeChartData = computed(() =>
+      createChartData(
+        monthlySummary.value.income, // 요약된 수입 데이터
+        "Income by Category",
+        ["#4BC0C0", "#FFCE56"] // 색상 배열
+      )
+    );
 
+    // 바 차트 옵션 (디자인 및 툴팁 포함)
+    const chartOptions = {
+      responsive: true,
+      maintainAspectRatio: false, // 컨테이너 크기에 맞게 조정
+      plugins: {
+        legend: {
+          position: "top",
+          labels: {
+            color: "#333", // 범례 색상
+            font: { size: 14, weight: "bold" }, // 폰트 스타일
+            padding: 20, // 범례와 그래프 간격
+          },
+        },
+        tooltip: {
+          backgroundColor: "rgba(0, 0, 0, 0.8)", // 툴팁 배경색
+          titleColor: "#fff",
+          bodyColor: "#fff",
+          callbacks: {
+            label: (tooltipItem) => `$${tooltipItem.raw} CAD`, // 값 포맷
+          },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true, // 0부터 시작
+          grid: { color: "rgba(0, 0, 0, 0.1)", drawBorder: false },
+          ticks: { color: "#555", font: { size: 12, weight: "500" }, stepSize: 50 },
+        },
+        x: {
+          grid: { color: "rgba(0, 0, 0, 0.05)", drawBorder: false },
+          ticks: { color: "#555", font: { size: 12, weight: "500" }, padding: 10 },
+        },
+      },
+    };
 
+    // 파이 차트 옵션
+    const pieChartOptions = {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          position: "top",
+          labels: { color: "#333", font: { size: 14, weight: "bold" } },
+        },
+        tooltip: {
+          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          titleColor: "#fff",
+          bodyColor: "#fff",
+          callbacks: {
+            label: (tooltipItem) => {
+              const dataset = tooltipItem.dataset.data;
+              const currentValue = dataset[tooltipItem.dataIndex];
+              const total = dataset.reduce((sum, value) => sum + value, 0);
+              const percentage = ((currentValue / total) * 100).toFixed(2);
+              return `${tooltipItem.label}: $${currentValue} CAD (${percentage}%)`; // 값 및 퍼센트 표시
+            },
+          },
+        },
+      },
+    };
 
-    // 컴포넌트가 처음 실행될 때 데이터베이스에서 지출/수입 데이터를 가져옴
-    onMounted(async () => {
-      const db = await setupDatabase();
-      expenses.value = await getAllExpenses(db);
-      income.value = await getAllIncome(db);
-    });
-
-    // 다음 그래프로 이동
+    // 그래프 탐색 기능
     const nextGraph = () => {
       currentGraph.value = currentGraph.value < 3 ? currentGraph.value + 1 : 1;
     };
 
-    // 이전 그래프로 이동
     const previousGraph = () => {
       currentGraph.value = currentGraph.value > 1 ? currentGraph.value - 1 : 3;
     };
 
-    // 위에서 정의한 데이터와 함수들을 반환
+    // 컴포넌트가 로드될 때 데이터 가져오기
+    onMounted(fetchData);
+
+    // 반환값
     return {
+      expenses,
+      income,
+      totalExpense,
+      totalIncome,
+      totalBalance,
       monthlySummary,
       moneyFlowChartData,
       expenseChartData,
@@ -286,6 +280,7 @@ const pieChartOptions = {
   },
 };
 </script>
+
 
 <style scoped>
 /* 대시보드 전체 레이아웃 */
