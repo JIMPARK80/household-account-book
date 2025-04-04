@@ -2,21 +2,21 @@
   <div class="dashboard-view">
     <!-- Dashboard Summary -->
     <div class="dashboard-summary">
-      <div class="summary-title">가계부 요약</div>
+      <div class="summary-title">Budget <Search></Search>ummary</div>
       <div class="summary-box">
         <!-- Expense -->
         <div class="summary-item expense">
-          <div class="label">지출</div>
+          <div class="label">expense</div>
           <div class="value">-{{ totalExpense }} CAD</div>
         </div>
         <!-- Income -->
         <div class="summary-item income">
-          <div class="label">수입</div>
+          <div class="label">income</div>
           <div class="value">+{{ totalIncome }} CAD</div>
         </div>
         <!-- Balance -->
         <div class="summary-item balance">
-          <div class="label">총 잔액</div>
+          <div class="label">total balance</div>
           <div class="value">{{ totalBalance }} CAD</div>
         </div>
       </div>
@@ -32,29 +32,29 @@
     <div class="graphs">
       <!-- Graph 1: Monthly Money Flow -->
       <div v-if="currentGraph === 1">
-        <h2>수입/지출 내역 비교</h2>
+        <h2>income/expense comparison</h2>
         <div v-if="hasMonthlyData">
           <Bar :data="moneyFlowChartData" :options="chartOptions" />
         </div>
-        <p v-else>데이터가 없습니다.</p>
+        <p v-else>no data</p>
       </div>
 
       <!-- Graph 2: Expense Summary -->
       <div v-if="currentGraph === 2">
-        <h2>월 단위 지출내역</h2>
+        <h2>monthly expense</h2>
         <div v-if="monthlySummary.expenses.length">
           <Pie :data="expenseChartData" :options="pieChartOptions" />
         </div>
-        <p v-else>지출 데이터가 없습니다.</p>
+        <p v-else>no expense data</p>
       </div>
 
       <!-- Graph 3: Income Summary -->
       <div v-if="currentGraph === 3">
-        <h2>월 단위 수입내역</h2>
+        <h2>monthly income</h2>
         <div v-if="monthlySummary.income.length">
           <Pie :data="incomeChartData" :options="pieChartOptions" />
         </div>
-        <p v-else>수입 데이터가 없습니다.</p>
+        <p v-else>no income data</p>
       </div>
     </div>
   </div>

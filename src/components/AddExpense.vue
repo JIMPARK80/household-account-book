@@ -4,25 +4,25 @@
       <div class="income-expense-summary">
       <!-- Expense -->
       <div class="summary-item expense">
-        <div class="label">지출</div>
+        <div class="label">expense</div>
         <div class="value">-{{ totalExpense }} CAD</div>
       </div>
       <!-- Income -->
       <div class="summary-item income">
-        <div class="label">수입</div>
+        <div class="label">income</div>
         <div class="value">+{{ totalIncome }} CAD</div>
       </div>
       <!-- Balance -->
       <div class="summary-item balance">
-        <div class="label">잔액</div>
+        <div class="label">balance</div>
         <div class="value">{{ total }} CAD</div>
       </div>
   </div>
 
     <!-- Tabs for Expense and Income -->
     <div class="tabs">
-      <button @click="setType('expense')" :class="{ active: type === 'expense' }">지출</button>
-      <button @click="setType('income')" :class="{ active: type === 'income' }">수입</button>
+      <button @click="setType('expense')" :class="{ active: type === 'expense' }">expense</button>
+      <button @click="setType('income')" :class="{ active: type === 'income' }">income</button>
     </div>
 
     <!-- Input Form -->
@@ -30,7 +30,7 @@
 
       <!-- Category Field -->
       <div class="form-group category-section">
-        <label class="category-title">카테고리</label>
+        <label class="category-title">category</label>
         <div class="category-grid">
           <div
             v-for="category in currentCategories"
@@ -47,19 +47,19 @@
       
 
       <div class="form-group compact">
-        <label for="date">날짜</label>
+        <label for="date">date</label>
         <input id="date" v-model="entry.date" type="date" required />
       </div>
       <div class="form-group compact">
-        <label for="note">내용</label>
+        <label for="note">note</label>
         <input id="note" v-model="entry.note" type="text" placeholder="Enter value" />
       </div>
       <div class="form-group compact">
-        <label for="amount">{{ type === 'expense' ? '지출' : '수입' }}</label>
+        <label for="amount">{{ type === 'expense' ? 'expense' : 'income' }}</label>
         <input id="amount" v-model="entry.amount" type="number" placeholder="0.00" required />
       </div>
       <div class="form-group compact">
-        <label for="currency">화폐단위</label>
+        <label for="currency">currency</label>
         <select id="currency" v-model="entry.currency" required>
           <option value="CAD">CAD</option>
           <option value="USD">USD</option>
@@ -79,7 +79,7 @@
     <div class="expense-list">
     <!-- Recent Entries Title in Form-Group Style -->
     <div class="form-group recent-entries-title">
-      <label for="recent-entries">최근항목 (Recent Entries)</label>
+      <label for="recent-entries">recent entries</label>
     </div>
     <ul id="recent-entries">
       <li v-for="expense in currentEntries.slice(0, currentEntries.length)" :key="expense.id">
@@ -89,8 +89,8 @@
           <em>({{ expense.category }})</em>
         </div>
         <div class="actions">
-          <button @click="editEntry(expense)" class="edit-button">수정</button>
-          <button @click="deleteEntry(expense.id)" class="delete-button">삭제</button>
+          <button @click="editEntry(expense)" class="edit-button">update</button>
+          <button @click="deleteEntry(expense.id)" class="delete-button">delete</button>
         </div>
       </li>
     </ul>
@@ -170,7 +170,7 @@ export default {
     },
     async addOrUpdateEntry() {
       if (!this.entry.date || !this.entry.amount || !this.entry.category || !this.entry.currency) {
-        alert("모든내용 입력해주세요. Please complete all required fields.");
+        alert("Please complete all required fields.");
         return;
       }
       const db = await setupDatabase();
